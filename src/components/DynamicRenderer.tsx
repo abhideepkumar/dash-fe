@@ -19,6 +19,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, TrendingUp, TrendingDown } from 'lucide-react';
 import { motion } from "framer-motion";
 
+// Chart Renderers
+import {
+  RenderBarChart,
+  RenderLineChart,
+  RenderAreaChart,
+  RenderPieChart,
+  RenderRadialChart,
+} from "./ChartRenderers";
+
 interface Column {
   Header?: string;
   header?: string;
@@ -36,10 +45,15 @@ interface ComponentProps {
   caption?: string;
   label?: string;
   variant?: "default" | "secondary" | "destructive" | "outline";
+  // Chart-specific props
+  categoryKey?: string;
+  dataKey?: string | string[];
+  nameKey?: string;
+  maxValue?: number;
 }
 
 interface ComponentSpec {
-  type: 'Card' | 'Table' | 'Progress' | 'Badge';
+  type: 'Card' | 'Table' | 'Progress' | 'Badge' | 'BarChart' | 'LineChart' | 'AreaChart' | 'PieChart' | 'RadialChart';
   props: ComponentProps;
 }
 
@@ -145,6 +159,17 @@ function renderComponent(component: ComponentSpec) {
       return <RenderProgress {...props} />;
     case 'Badge':
       return <RenderBadge {...props} />;
+    // Chart Components
+    case 'BarChart':
+      return <RenderBarChart data={props.data || []} categoryKey={props.categoryKey || ''} dataKey={props.dataKey || ''} />;
+    case 'LineChart':
+      return <RenderLineChart data={props.data || []} categoryKey={props.categoryKey || ''} dataKey={props.dataKey || ''} />;
+    case 'AreaChart':
+      return <RenderAreaChart data={props.data || []} categoryKey={props.categoryKey || ''} dataKey={props.dataKey || ''} />;
+    case 'PieChart':
+      return <RenderPieChart data={props.data || []} categoryKey={props.categoryKey || ''} dataKey={props.dataKey || ''} nameKey={props.nameKey} />;
+    case 'RadialChart':
+      return <RenderRadialChart data={props.data || []} categoryKey={props.categoryKey || ''} dataKey={props.dataKey || ''} nameKey={props.nameKey} maxValue={props.maxValue} />;
     default:
       return (
         <Card className="border-yellow-500">
