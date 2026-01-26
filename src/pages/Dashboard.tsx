@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { 
   Search, 
   Loader2, 
@@ -10,7 +10,6 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Toaster, toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from '@/contexts/AuthContext';
@@ -57,39 +56,7 @@ export function DashboardPage() {
   // So we need the exact user._id.
   const sessionId = user?.id ? `user_${user.id}` : null;
 
-  // Poll sync status
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
 
-    const checkStatus = async () => {
-      try {
-        const data = await api.user.syncStatus();
-        setSyncStatus(data.status);
-
-        if (data.status === 'syncing' || data.status === 'pending') {
-            // Mock progress since real progress isn't exposed yet for async bg jobs
-             setSyncProgress({
-                stage: 'enriching',
-                current: 1,
-                total: 10,
-                completed: false
-             });
-        } else if (data.status === 'completed') {
-             setSyncProgress(null);
-        } else if (data.status === 'error') {
-            setError(data.error || 'Sync failed');
-            setSyncProgress({ error: data.error });
-        }
-      } catch (err) {
-        console.error('Failed to check sync status:', err);
-      }
-    };
-
-    checkStatus();
-    interval = setInterval(checkStatus, 3000); // Poll every 3s
-
-    return () => clearInterval(interval);
-  }, []);
 
   const handleSearchSubmit = async (e?: React.FormEvent, forcedQuery?: string) => {
     e?.preventDefault();
@@ -118,9 +85,11 @@ export function DashboardPage() {
       
       if (!genData.success) throw new Error(genData.message);
       log('SQL Generated successfully', 'success');
+      
+      const requestId = genData.requestId;
 
       log('Executing SQL...', 'process');
-      const execData = await api.query.execute(sessionId, genData.sql);
+      const execData = await api.query.execute(sessionId, genData.sql, requestId);
       
       if (!execData.success) throw new Error(execData.message);
       log(`Execution complete: ${execData.rows.length} rows returned`, 'success');
@@ -131,6 +100,8 @@ export function DashboardPage() {
           sql: genData.sql,
           rows: execData.rows,
           fields: execData.fields,
+          requestId,
+          sessionId 
       });
       
       if (!visData.success) throw new Error(visData.message);
@@ -139,8 +110,20 @@ export function DashboardPage() {
 
     } catch (err: any) {
       log(`Error: ${err.message}`, 'error');
-      setError(err.message);
-      toast.error(err.message);
+      
+      // Handle "Processing" state from backend
+      if (err.message && err.message.includes('synchronization in progress')) {
+          setSyncStatus('syncing');
+          setSyncProgress({
+            stage: 'enriching',
+            current: 1,
+            total: 10,
+            completed: false
+         });
+      } else {
+          setError(err.message);
+          toast.error(err.message);
+      }
     } finally {
       setIsProcessing(false);
     }

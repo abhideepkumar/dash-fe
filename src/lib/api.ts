@@ -98,10 +98,10 @@ export const api = {
         body: JSON.stringify({ sessionId, query }),
       }),
     
-    execute: (sessionId: string, sql: string) =>
+    execute: (sessionId: string, sql: string, requestId?: string) =>
       apiRequest<any>('/query/execute', {
         method: 'POST',
-        body: JSON.stringify({ sessionId, sql }),
+        body: JSON.stringify({ sessionId, sql, requestId }),
       }),
     
     visualize: (data: any) =>
