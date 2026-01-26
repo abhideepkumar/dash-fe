@@ -16,7 +16,7 @@ import {
   TableCell 
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, TrendingUp, TrendingDown } from 'lucide-react';
+import { AlertCircle, TrendingUp, TrendingDown, Lightbulb, BarChart3, Target, AlertTriangle, Info } from 'lucide-react';
 import { motion } from "framer-motion";
 
 // Chart Renderers
@@ -57,10 +57,20 @@ interface ComponentSpec {
   props: ComponentProps;
 }
 
+// Insight type from backend
+interface Insight {
+  type: 'summary' | 'trend' | 'peak' | 'comparison' | 'anomaly' | 'recommendation' | 'info' | 'error';
+  priority: 'high' | 'medium' | 'low';
+  text: string;
+  evidence?: string;
+  score?: number;
+}
+
 interface UISpec {
   title: string;
   description?: string;
   component: ComponentSpec;
+  insights?: Insight[];
 }
 
 interface DynamicRendererProps {
@@ -112,7 +122,7 @@ export function DynamicRenderer({ uiSpec, isLoading, error }: DynamicRendererPro
     return null;
   }
 
-  const { title, description, component } = uiSpec;
+  const { title, description, component, insights } = uiSpec;
 
   return (
     <motion.div 
@@ -136,6 +146,11 @@ export function DynamicRenderer({ uiSpec, isLoading, error }: DynamicRendererPro
       <div className="mt-6">
         {renderComponent(component)}
       </div>
+
+      {/* Insights Section */}
+      {insights && insights.length > 0 && (
+        <InsightsSection insights={insights} />
+      )}
     </motion.div>
   );
 }
@@ -183,6 +198,113 @@ function renderComponent(component: ComponentSpec) {
       );
   }
 }
+
+/**
+ * Insights Section Component - Displays AI-generated insights below the chart
+ */
+function InsightsSection({ insights }: { insights: Insight[] }) {
+  const getInsightIcon = (type: string) => {
+    switch (type) {
+      case 'summary':
+        return <BarChart3 className="h-4 w-4" />;
+      case 'trend':
+        return <TrendingUp className="h-4 w-4" />;
+      case 'peak':
+        return <Target className="h-4 w-4" />;
+      case 'comparison':
+        return <BarChart3 className="h-4 w-4" />;
+      case 'anomaly':
+        return <AlertTriangle className="h-4 w-4" />;
+      case 'recommendation':
+        return <Lightbulb className="h-4 w-4" />;
+      default:
+        return <Info className="h-4 w-4" />;
+    }
+  };
+
+  const getInsightStyles = (type: string, priority: string) => {
+    // Priority-based border intensity
+    const borderOpacity = priority === 'high' ? 'border-l-4' : 'border-l-2';
+    
+    // Type-based colors
+    switch (type) {
+      case 'summary':
+        return `${borderOpacity} border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20`;
+      case 'trend':
+        return `${borderOpacity} border-l-green-500 bg-green-50/50 dark:bg-green-950/20`;
+      case 'peak':
+        return `${borderOpacity} border-l-purple-500 bg-purple-50/50 dark:bg-purple-950/20`;
+      case 'comparison':
+        return `${borderOpacity} border-l-cyan-500 bg-cyan-50/50 dark:bg-cyan-950/20`;
+      case 'anomaly':
+        return `${borderOpacity} border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/20`;
+      case 'recommendation':
+        return `${borderOpacity} border-l-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20`;
+      default:
+        return `${borderOpacity} border-l-gray-400 bg-gray-50/50 dark:bg-gray-950/20`;
+    }
+  };
+
+  const getIconColor = (type: string) => {
+    switch (type) {
+      case 'summary': return 'text-blue-600 dark:text-blue-400';
+      case 'trend': return 'text-green-600 dark:text-green-400';
+      case 'peak': return 'text-purple-600 dark:text-purple-400';
+      case 'comparison': return 'text-cyan-600 dark:text-cyan-400';
+      case 'anomaly': return 'text-amber-600 dark:text-amber-400';
+      case 'recommendation': return 'text-emerald-600 dark:text-emerald-400';
+      default: return 'text-gray-600 dark:text-gray-400';
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.3, duration: 0.4 }}
+      className="mt-8"
+    >
+      <div className="flex items-center gap-2 mb-4">
+        <Lightbulb className="h-5 w-5 text-amber-500" />
+        <h3 className="text-lg font-semibold text-foreground">Key Insights</h3>
+      </div>
+      
+      <div className="space-y-3">
+        {insights.map((insight, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4 + index * 0.1, duration: 0.3 }}
+            className={`p-4 rounded-lg ${getInsightStyles(insight.type, insight.priority)}`}
+          >
+            <div className="flex items-start gap-3">
+              <div className={`mt-0.5 ${getIconColor(insight.type)}`}>
+                {getInsightIcon(insight.type)}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-foreground leading-relaxed">
+                  {insight.text}
+                </p>
+                {insight.evidence && (
+                  <p className="text-xs text-muted-foreground mt-1 font-mono">
+                    📊 {insight.evidence}
+                  </p>
+                )}
+              </div>
+              {insight.priority === 'high' && (
+                <span className="text-xs font-medium px-2 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                  High Priority
+                </span>
+              )}
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
 
 /**
  * Card Component Renderer
