@@ -26,6 +26,7 @@ import {
   RenderAreaChart,
   RenderPieChart,
   RenderRadialChart,
+  RenderHeatmap,
 } from "./ChartRenderers";
 
 interface Column {
@@ -50,10 +51,14 @@ interface ComponentProps {
   dataKey?: string | string[];
   nameKey?: string;
   maxValue?: number;
+  // Heatmap-specific props
+  xKey?: string;
+  yKey?: string;
+  valueKey?: string;
 }
 
 interface ComponentSpec {
-  type: 'Card' | 'Table' | 'Progress' | 'Badge' | 'BarChart' | 'LineChart' | 'AreaChart' | 'PieChart' | 'RadialChart';
+  type: 'Card' | 'Table' | 'Progress' | 'Badge' | 'BarChart' | 'LineChart' | 'AreaChart' | 'PieChart' | 'RadialChart' | 'Heatmap';
   props: ComponentProps;
 }
 
@@ -185,6 +190,8 @@ function renderComponent(component: ComponentSpec) {
       return <RenderPieChart data={props.data || []} categoryKey={props.categoryKey || ''} dataKey={props.dataKey || ''} nameKey={props.nameKey} />;
     case 'RadialChart':
       return <RenderRadialChart data={props.data || []} categoryKey={props.categoryKey || ''} dataKey={props.dataKey || ''} nameKey={props.nameKey} maxValue={props.maxValue} />;
+    case 'Heatmap':
+      return <RenderHeatmap data={props.data || []} xKey={props.xKey || ''} yKey={props.yKey || ''} valueKey={props.valueKey || ''} />;
     default:
       return (
         <Card className="border-yellow-500">
