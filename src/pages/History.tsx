@@ -55,7 +55,7 @@ export function HistoryPage() {
               <tr className="bg-surface-container-low/50 border-b border-outline-variant/10">
                 <th className="px-8 py-4 text-[10px] font-label font-bold uppercase tracking-widest text-outline">Query Status</th>
                 <th className="px-8 py-4 text-[10px] font-label font-bold uppercase tracking-widest text-outline">Definition</th>
-                <th className="px-8 py-4 text-[10px] font-label font-bold uppercase tracking-widest text-outline">Operator</th>
+                <th className="px-8 py-4 text-[10px] font-label font-bold uppercase tracking-widest text-outline">Type</th>
                 <th className="px-8 py-4 text-[10px] font-label font-bold uppercase tracking-widest text-outline">Runtime</th>
                 <th className="px-8 py-4 text-[10px] font-label font-bold uppercase tracking-widest text-outline text-right">Activity</th>
               </tr>
@@ -83,7 +83,7 @@ export function HistoryPage() {
                             <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                             <span className="text-sm font-semibold capitalize">{log.status}</span>
                           </>
-                        ) : log.status === 'failed' ? (
+                        ) : log.status === 'error' ? (
                           <>
                             <div className="w-2 h-2 rounded-full bg-error animate-pulse"></div>
                             <span className="text-sm font-bold text-error capitalize">{log.status}</span>
@@ -97,19 +97,38 @@ export function HistoryPage() {
                       </div>
                     </td>
                     <td className="px-8 py-5">
-                      <div className="text-sm font-medium truncate w-[400px]">{log.query}</div>
-                      <div className="text-xs text-on-surface-variant flex gap-3 mt-1">
-                        <span>Request ID: <span className="font-mono">{log.requestId.substring(0, 8)}...</span></span>
-                        {log.stepCount > 0 && <span>Steps: {log.stepCount}</span>}
+                      <div className="flex items-start gap-2">
+                        {/* Follow-up indent indicator */}
+                        {log.isFollowUp && (
+                          <span className="material-symbols-outlined text-[16px] text-primary/50 mt-0.5 shrink-0">subdirectory_arrow_right</span>
+                        )}
+                        <div>
+                          <div className="text-sm font-medium truncate w-[360px]">{log.query}</div>
+                          <div className="text-xs text-on-surface-variant flex gap-3 mt-1 flex-wrap">
+                            <span>Request ID: <span className="font-mono">{log.requestId.substring(0, 8)}...</span></span>
+                            {log.stepCount > 0 && <span>Steps: {log.stepCount}</span>}
+                            {log.historyDepth > 0 && (
+                              <span className="flex items-center gap-1 text-primary">
+                                <span className="material-symbols-outlined text-[11px]">history</span>
+                                {log.historyDepth} prior turn{log.historyDepth !== 1 ? 's' : ''}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </td>
                     <td className="px-8 py-5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-primary-container/30 border border-primary/20 flex items-center justify-center">
-                          <span className="material-symbols-outlined text-[10px] text-primary">person</span>
-                        </div>
-                        <span className="text-sm font-medium">You</span>
-                      </div>
+                      {log.isFollowUp ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-primary/8 text-primary border border-primary/15">
+                          <span className="material-symbols-outlined text-[11px]">reply</span>
+                          Follow-up
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-emerald-500/8 text-emerald-700 border border-emerald-500/15">
+                          <span className="material-symbols-outlined text-[11px]">add_circle</span>
+                          New Query
+                        </span>
+                      )}
                     </td>
                     <td className="px-8 py-5">
                       <span className={`text-sm font-medium ${log.totalDurationMs > 10000 ? 'text-error font-bold' : ''}`}>

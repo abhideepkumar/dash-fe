@@ -66,13 +66,81 @@ function formatLabel(str: string): string {
     .trim();
 }
 
+// Time-based category keys that may have a companion "year" column
+const TIME_UNITS = new Set(['week', 'month', 'quarter', 'day', 'hour']);
+
+// Month name lookup for human-readable labels
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/**
+ * Preprocesses time-series data where week/month/quarter exists alongside a year column.
+ * Synthesizes a compound "__period__" key used as the real categoryKey so that
+ * year rollovers (week 52 → week 1) display correctly on the x-axis.
+ * Also sorts the data chronologically (year asc, then unit asc).
+ */
+function preprocessTimeSeries(
+  data: any[],
+  categoryKey: string
+): { data: any[], categoryKey: string } {
+  if (!data || data.length === 0) return { data, categoryKey };
+
+  const isTimeUnit = TIME_UNITS.has(String(categoryKey).toLowerCase());
+  
+  // Try to find if any row contains a 'year' key (case insensitive)
+  let yearKey = '';
+  for (const key of Object.keys(data[0] || {})) {
+    if (key.toLowerCase() === 'year') {
+      yearKey = key;
+      break;
+    }
+  }
+
+  if (!isTimeUnit || !yearKey) return { data, categoryKey };
+
+  // Sort chronologically: year asc, then unit asc
+  const sorted = [...data].sort((a, b) => {
+    const yearDiff = Number(a[yearKey] || 0) - Number(b[yearKey] || 0);
+    if (yearDiff !== 0) return yearDiff;
+    return Number(a[categoryKey] || 0) - Number(b[categoryKey] || 0);
+  });
+
+  // Synthesize a human-readable compound period label
+  const unit = String(categoryKey).toLowerCase();
+  const processed = sorted.map(row => {
+    const rawVal = row[categoryKey];
+    if (rawVal === undefined || rawVal === null) return row;
+    
+    // For years like '2025' or 2025, extract '25'
+    const yrRaw = row[yearKey];
+    const yr = yrRaw ? String(Number(yrRaw)).slice(-2) : '';
+    const val = Number(rawVal);
+    let label = String(rawVal);
+
+    if (yr) {
+      if (unit === 'month' && !isNaN(val)) {
+        label = `${MONTH_NAMES[val - 1] || val} '${yr}`;
+      } else if (unit === 'week') {
+        label = `W${val} '${yr}`;
+      } else if (unit === 'quarter') {
+        label = `Q${val} '${yr}`;
+      } else {
+        label = `${val} '${yr}`;
+      }
+    }
+
+    return { ...row, __period__: label };
+  });
+
+  return { data: processed, categoryKey: '__period__' };
+}
+
 interface ChartProps {
   data: any[];
   categoryKey: string;
   dataKey: string | string[];
   nameKey?: string;
   maxValue?: number;
-  seriesKey?: string; // NEW: For multi-series charts (groups data by this column)
+  seriesKey?: string; // For multi-series charts (groups data by this column)
 }
 
 /**
@@ -80,6 +148,11 @@ interface ChartProps {
  * Supports multi-series via seriesKey prop (creates grouped bars)
  */
 export function RenderBarChart({ data, categoryKey, dataKey, seriesKey }: ChartProps) {
+  // Preprocess: synthesize compound period label when year column co-exists with a time unit
+  const pre = preprocessTimeSeries(data, categoryKey);
+  data = pre.data;
+  categoryKey = pre.categoryKey;
+
   const valueKey = Array.isArray(dataKey) ? dataKey[0] : dataKey;
   
   // If seriesKey provided, pivot data for multi-series grouped bars
@@ -146,6 +219,11 @@ export function RenderBarChart({ data, categoryKey, dataKey, seriesKey }: ChartP
  * Supports multi-series via seriesKey prop
  */
 export function RenderLineChart({ data, categoryKey, dataKey, seriesKey }: ChartProps) {
+  // Preprocess: synthesize compound period label when year column co-exists with a time unit
+  const pre = preprocessTimeSeries(data, categoryKey);
+  data = pre.data;
+  categoryKey = pre.categoryKey;
+
   const valueKey = Array.isArray(dataKey) ? dataKey[0] : dataKey;
   
   // If seriesKey provided, pivot data for multi-series
@@ -215,6 +293,11 @@ export function RenderLineChart({ data, categoryKey, dataKey, seriesKey }: Chart
  * Area Chart Renderer
  */
 export function RenderAreaChart({ data, categoryKey, dataKey }: ChartProps) {
+  // Preprocess: synthesize compound period label when year column co-exists with a time unit
+  const pre = preprocessTimeSeries(data, categoryKey);
+  data = pre.data;
+  categoryKey = pre.categoryKey;
+
   const keys = Array.isArray(dataKey) ? dataKey : [dataKey];
   const chartConfig = buildChartConfig(keys);
 
@@ -269,6 +352,12 @@ export function RenderPieChart({ data, nameKey, dataKey }: ChartProps) {
     };
   });
 
+  // Ensure the value used for sizing the pie slices is a number
+  const parsedData = data.map(item => ({
+    ...item,
+    [key]: typeof item[key] === 'string' ? parseFloat(item[key]) : item[key]
+  }));
+
   return (
     <Card>
       <CardContent className="pt-6">
@@ -276,7 +365,7 @@ export function RenderPieChart({ data, nameKey, dataKey }: ChartProps) {
           <PieChart accessibilityLayer>
             <ChartTooltip content={<ChartTooltipContent hideLabel />} />
             <Pie
-              data={data}
+              data={parsedData}
               dataKey={key}
               nameKey={labelKey}
               cx="50%"
@@ -287,7 +376,7 @@ export function RenderPieChart({ data, nameKey, dataKey }: ChartProps) {
               label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
               labelLine={false}
             >
-              {data.map((_, index) => (
+              {parsedData.map((_, index) => (
                 <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
               ))}
             </Pie>
@@ -306,15 +395,16 @@ export function RenderRadialChart({ data, nameKey, dataKey, maxValue = 100 }: Ch
   const key = Array.isArray(dataKey) ? dataKey[0] : dataKey;
   const labelKey = nameKey || 'name';
   
-  // Prepare data with fill colors
+  // Prepare data with fill colors and parse numbers
   const chartData = data.map((item, i) => ({
     ...item,
+    [key]: typeof item[key] === 'string' ? parseFloat(item[key]) : item[key],
     fill: CHART_COLORS[i % CHART_COLORS.length],
   }));
 
   // Build config
   const chartConfig: ChartConfig = {};
-  data.forEach((item, i) => {
+  chartData.forEach((item, i) => {
     const label = item[labelKey];
     chartConfig[label] = {
       label: label,
@@ -323,8 +413,8 @@ export function RenderRadialChart({ data, nameKey, dataKey, maxValue = 100 }: Ch
   });
 
   // For single value, show as gauge
-  if (data.length === 1) {
-    const value = data[0][key];
+  if (chartData.length === 1) {
+    const value = chartData[0][key];
     const percentage = Math.min(100, (value / maxValue) * 100);
     
     return (
@@ -354,14 +444,14 @@ export function RenderRadialChart({ data, nameKey, dataKey, maxValue = 100 }: Ch
                             y={(viewBox.cy || 0) - 10}
                             className="fill-foreground text-4xl font-bold"
                           >
-                            {value.toLocaleString()}
+                            {Number(value).toLocaleString()}
                           </tspan>
                           <tspan
                             x={viewBox.cx}
                             y={(viewBox.cy || 0) + 20}
                             className="fill-muted-foreground text-sm"
                           >
-                            {data[0][labelKey] || 'Value'}
+                            {chartData[0][labelKey] || 'Value'}
                           </tspan>
                         </text>
                       );

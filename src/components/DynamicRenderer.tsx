@@ -220,7 +220,7 @@ function InsightsSection({ insights }: { insights: Insight[] }) {
   };
 
   const getInsightStyles = (type: string) => {
-    const baseClasses = "relative overflow-hidden rounded-[1.5rem] border backdrop-blur-xl transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)]";
+    const baseClasses = "relative overflow-hidden rounded-[1.5rem] border backdrop-blur-xl transition-all duration-300 hover:shadow-sm";
     switch (type) {
       case 'summary':
         return `${baseClasses} border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10`;
@@ -265,22 +265,21 @@ function InsightsSection({ insights }: { insights: Insight[] }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 5 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3, duration: 0.4 }}
-      className="mt-12"
+      className="mt-6"
     >
-      <div className="flex items-center gap-3 mb-6 px-2">
-        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shadow-sm">
-          <span className="material-symbols-outlined text-amber-600" style={{ fontVariationSettings: "'FILL' 1" }}>lightbulb</span>
+      <div className="flex items-center gap-2 mb-3 px-1">
+        <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shadow-sm">
+          <span className="material-symbols-outlined text-[16px] text-amber-600" style={{ fontVariationSettings: "'FILL' 1" }}>lightbulb</span>
         </div>
         <div>
-           <h3 className="text-xl font-bold font-headline text-on-surface mb-0.5">Key Insights</h3>
-           <p className="text-[10px] font-label uppercase tracking-widest text-outline font-bold">AI Analytical Observations</p>
+           <h3 className="text-sm font-bold font-headline text-on-surface leading-none">Key Insights</h3>
         </div>
       </div>
       
-      <div className="space-y-2">
+      <div className="space-y-1.5 flex flex-col">
         {insights.map((insight, index) => (
           <motion.div
             key={index}
@@ -290,23 +289,24 @@ function InsightsSection({ insights }: { insights: Insight[] }) {
             className={`${getInsightStyles(insight.type)} py-1`}
           >
             {/* Left emphasis border */}
-            <div className={`absolute left-0 top-0 bottom-0 w-1 ${getBorderColor(insight.type)} ${insight.priority === 'high' ? 'w-1.5' : 'opacity-70'}`}></div>
+            <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${getBorderColor(insight.type)} ${insight.priority === 'high' ? 'opacity-100' : 'opacity-60'}`}></div>
             
-            <div className="p-4 pl-6 flex flex-col md:flex-row md:items-start gap-4">
-              <div className={`mt-0.5 w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center border border-current/10 ${getIconColor(insight.type)} shadow-sm`}>
-                <span className="material-symbols-outlined text-[24px]">
+            <div className="p-2.5 pl-4 flex items-start gap-3">
+              <div className={`mt-0.5 w-7 h-7 shrink-0 rounded-lg flex items-center justify-center border border-current/10 ${getIconColor(insight.type)} shadow-sm`}>
+                <span className="material-symbols-outlined text-[16px]">
                   {getInsightIconName(insight.type)}
                 </span>
               </div>
+              
               <div className="flex-1 min-w-0">
-                <p className="text-[15px] font-medium font-body text-on-surface leading-relaxed md:pr-8">
+                <p className="text-[13px] font-medium font-body text-on-surface leading-snug">
                   {insight.text}
                 </p>
                 {insight.evidence && (
-                  <div className="mt-4 pt-4 border-t border-current/5">
-                    <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/40 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8)] border border-white/60">
-                       <span className="material-symbols-outlined text-[14px] text-outline">data_object</span>
-                       <span className="text-xs font-mono text-on-surface-variant break-all">
+                  <div className="mt-2 pt-2 border-t border-current/5">
+                    <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border bg-white/40 border-white/60">
+                       <span className="material-symbols-outlined text-[12px] text-outline">data_object</span>
+                       <span className="text-[10px] font-mono text-on-surface-variant break-all">
                          {insight.evidence}
                        </span>
                     </div>
@@ -315,11 +315,11 @@ function InsightsSection({ insights }: { insights: Insight[] }) {
               </div>
               
               {/* High Priority Badge */}
-              <div className="shrink-0 pt-1 md:self-stretch">
+              <div className="shrink-0 flex items-center">
                 {insight.priority === 'high' && (
-                  <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-full bg-error/10 text-error border border-error/20 shadow-sm whitespace-nowrap">
-                    <span className="material-symbols-outlined text-[12px]">error</span>
-                    High Priority
+                  <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-widest font-bold px-2 py-1 rounded-full bg-error/10 text-error border border-error/20 whitespace-nowrap">
+                    <span className="material-symbols-outlined text-[10px]">error</span>
+                    High
                   </span>
                 )}
               </div>

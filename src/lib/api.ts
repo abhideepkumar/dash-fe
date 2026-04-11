@@ -92,10 +92,10 @@ export const api = {
 
   // Query endpoints (existing)
   query: {
-    generate: (sessionId: string, query: string) =>
+    generate: (sessionId: string, query: string, history: Array<{query: string, sql: string}> = []) =>
       apiRequest<any>('/query/generate', {
         method: 'POST',
-        body: JSON.stringify({ sessionId, query }),
+        body: JSON.stringify({ sessionId, query, history }),
       }),
     
     execute: (sessionId: string, sql: string, requestId?: string) =>
