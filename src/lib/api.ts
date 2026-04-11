@@ -134,6 +134,15 @@ export const api = {
     status: (sessionId?: string) =>
       apiRequest<any>(`/health/status${sessionId ? `?sessionId=${sessionId}` : ''}`),
   },
+
+  // Log endpoints
+  logs: {
+    getAll: (limit: number = 50) =>
+      apiRequest<any>(`/logs?limit=${limit}`),
+    
+    get: (requestId: string) =>
+      apiRequest<any>(`/logs/${requestId}`),
+  },
 };
 
 export default api;

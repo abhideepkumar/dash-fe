@@ -16,7 +16,7 @@ import {
   TableCell 
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, TrendingUp, TrendingDown, Lightbulb, BarChart3, Target, AlertTriangle, Info } from 'lucide-react';
+import { AlertCircle, TrendingUp, TrendingDown } from 'lucide-react';
 import { motion } from "framer-motion";
 
 // Chart Renderers
@@ -206,61 +206,60 @@ function renderComponent(component: ComponentSpec) {
   }
 }
 
-/**
- * Insights Section Component - Displays AI-generated insights below the chart
- */
 function InsightsSection({ insights }: { insights: Insight[] }) {
-  const getInsightIcon = (type: string) => {
+  const getInsightIconName = (type: string) => {
     switch (type) {
-      case 'summary':
-        return <BarChart3 className="h-4 w-4" />;
-      case 'trend':
-        return <TrendingUp className="h-4 w-4" />;
-      case 'peak':
-        return <Target className="h-4 w-4" />;
-      case 'comparison':
-        return <BarChart3 className="h-4 w-4" />;
-      case 'anomaly':
-        return <AlertTriangle className="h-4 w-4" />;
-      case 'recommendation':
-        return <Lightbulb className="h-4 w-4" />;
-      default:
-        return <Info className="h-4 w-4" />;
+      case 'summary': return 'monitoring';
+      case 'trend': return 'trending_up';
+      case 'peak': return 'adjust';
+      case 'comparison': return 'compare_arrows';
+      case 'anomaly': return 'warning';
+      case 'recommendation': return 'tips_and_updates';
+      default: return 'info';
     }
   };
 
-  const getInsightStyles = (type: string, priority: string) => {
-    // Priority-based border intensity
-    const borderOpacity = priority === 'high' ? 'border-l-4' : 'border-l-2';
-    
-    // Type-based colors
+  const getInsightStyles = (type: string) => {
+    const baseClasses = "relative overflow-hidden rounded-[1.5rem] border backdrop-blur-xl transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)]";
     switch (type) {
       case 'summary':
-        return `${borderOpacity} border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20`;
+        return `${baseClasses} border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10`;
       case 'trend':
-        return `${borderOpacity} border-l-green-500 bg-green-50/50 dark:bg-green-950/20`;
+        return `${baseClasses} border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10`;
       case 'peak':
-        return `${borderOpacity} border-l-purple-500 bg-purple-50/50 dark:bg-purple-950/20`;
+        return `${baseClasses} border-purple-500/20 bg-purple-500/5 hover:bg-purple-500/10`;
       case 'comparison':
-        return `${borderOpacity} border-l-cyan-500 bg-cyan-50/50 dark:bg-cyan-950/20`;
+        return `${baseClasses} border-cyan-500/20 bg-cyan-500/5 hover:bg-cyan-500/10`;
       case 'anomaly':
-        return `${borderOpacity} border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/20`;
+        return `${baseClasses} border-error/20 bg-error/5 hover:bg-error/10`;
       case 'recommendation':
-        return `${borderOpacity} border-l-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20`;
+        return `${baseClasses} border-primary/20 bg-primary/5 hover:bg-primary/10`;
       default:
-        return `${borderOpacity} border-l-gray-400 bg-gray-50/50 dark:bg-gray-950/20`;
+        return `${baseClasses} border-outline-variant/20 bg-surface-container-low hover:bg-surface-container`;
     }
   };
 
   const getIconColor = (type: string) => {
     switch (type) {
-      case 'summary': return 'text-blue-600 dark:text-blue-400';
-      case 'trend': return 'text-green-600 dark:text-green-400';
-      case 'peak': return 'text-purple-600 dark:text-purple-400';
-      case 'comparison': return 'text-cyan-600 dark:text-cyan-400';
-      case 'anomaly': return 'text-amber-600 dark:text-amber-400';
-      case 'recommendation': return 'text-emerald-600 dark:text-emerald-400';
-      default: return 'text-gray-600 dark:text-gray-400';
+      case 'summary': return 'text-blue-600 bg-blue-500/10';
+      case 'trend': return 'text-emerald-600 bg-emerald-500/10';
+      case 'peak': return 'text-purple-600 bg-purple-500/10';
+      case 'comparison': return 'text-cyan-600 bg-cyan-500/10';
+      case 'anomaly': return 'text-error bg-error/10';
+      case 'recommendation': return 'text-primary bg-primary/10';
+      default: return 'text-on-surface-variant bg-surface-variant/50';
+    }
+  };
+
+  const getBorderColor = (type: string) => {
+    switch (type) {
+      case 'summary': return 'bg-blue-500';
+      case 'trend': return 'bg-emerald-500';
+      case 'peak': return 'bg-purple-500';
+      case 'comparison': return 'bg-cyan-500';
+      case 'anomaly': return 'bg-error';
+      case 'recommendation': return 'bg-primary';
+      default: return 'bg-outline-variant';
     }
   };
 
@@ -269,41 +268,61 @@ function InsightsSection({ insights }: { insights: Insight[] }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3, duration: 0.4 }}
-      className="mt-8"
+      className="mt-12"
     >
-      <div className="flex items-center gap-2 mb-4">
-        <Lightbulb className="h-5 w-5 text-amber-500" />
-        <h3 className="text-lg font-semibold text-foreground">Key Insights</h3>
+      <div className="flex items-center gap-3 mb-6 px-2">
+        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shadow-sm">
+          <span className="material-symbols-outlined text-amber-600" style={{ fontVariationSettings: "'FILL' 1" }}>lightbulb</span>
+        </div>
+        <div>
+           <h3 className="text-xl font-bold font-headline text-on-surface mb-0.5">Key Insights</h3>
+           <p className="text-[10px] font-label uppercase tracking-widest text-outline font-bold">AI Analytical Observations</p>
+        </div>
       </div>
       
-      <div className="space-y-3">
+      <div className="space-y-2">
         {insights.map((insight, index) => (
           <motion.div
             key={index}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4 + index * 0.1, duration: 0.3 }}
-            className={`p-4 rounded-lg ${getInsightStyles(insight.type, insight.priority)}`}
+            className={`${getInsightStyles(insight.type)} py-1`}
           >
-            <div className="flex items-start gap-3">
-              <div className={`mt-0.5 ${getIconColor(insight.type)}`}>
-                {getInsightIcon(insight.type)}
+            {/* Left emphasis border */}
+            <div className={`absolute left-0 top-0 bottom-0 w-1 ${getBorderColor(insight.type)} ${insight.priority === 'high' ? 'w-1.5' : 'opacity-70'}`}></div>
+            
+            <div className="p-4 pl-6 flex flex-col md:flex-row md:items-start gap-4">
+              <div className={`mt-0.5 w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center border border-current/10 ${getIconColor(insight.type)} shadow-sm`}>
+                <span className="material-symbols-outlined text-[24px]">
+                  {getInsightIconName(insight.type)}
+                </span>
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground leading-relaxed">
+              <div className="flex-1 min-w-0">
+                <p className="text-[15px] font-medium font-body text-on-surface leading-relaxed md:pr-8">
                   {insight.text}
                 </p>
                 {insight.evidence && (
-                  <p className="text-xs text-muted-foreground mt-1 font-mono">
-                    📊 {insight.evidence}
-                  </p>
+                  <div className="mt-4 pt-4 border-t border-current/5">
+                    <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/40 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8)] border border-white/60">
+                       <span className="material-symbols-outlined text-[14px] text-outline">data_object</span>
+                       <span className="text-xs font-mono text-on-surface-variant break-all">
+                         {insight.evidence}
+                       </span>
+                    </div>
+                  </div>
                 )}
               </div>
-              {insight.priority === 'high' && (
-                <span className="text-xs font-medium px-2 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                  High Priority
-                </span>
-              )}
+              
+              {/* High Priority Badge */}
+              <div className="shrink-0 pt-1 md:self-stretch">
+                {insight.priority === 'high' && (
+                  <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-full bg-error/10 text-error border border-error/20 shadow-sm whitespace-nowrap">
+                    <span className="material-symbols-outlined text-[12px]">error</span>
+                    High Priority
+                  </span>
+                )}
+              </div>
             </div>
           </motion.div>
         ))}
