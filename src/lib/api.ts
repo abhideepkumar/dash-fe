@@ -128,6 +128,12 @@ export const api = {
     progress: (sessionId: string) =>
       apiRequest<any>(`/schema/progress/${sessionId}`),
   },
+
+  // Health check endpoints
+  health: {
+    status: (sessionId?: string) =>
+      apiRequest<any>(`/health/status${sessionId ? `?sessionId=${sessionId}` : ''}`),
+  },
 };
 
 export default api;

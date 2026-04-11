@@ -56,9 +56,12 @@ export function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [healthStatus, setHealthStatus] = useState<any>(null);
+  const [isHealthLoading, setIsHealthLoading] = useState(false);
 
   useEffect(() => {
     loadSettings();
+    loadHealth();
   }, []);
 
   const loadSettings = async () => {
@@ -70,6 +73,20 @@ export function SettingsPage() {
       setError(err.message || 'Failed to load settings');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadHealth = async () => {
+    try {
+      setIsHealthLoading(true);
+      // Use sessionId if available
+      const sessionId = localStorage.getItem('sessionId');
+      const result = await api.health.status(sessionId || undefined);
+      setHealthStatus(result);
+    } catch (err: any) {
+      console.error('Failed to load health status:', err);
+    } finally {
+      setIsHealthLoading(false);
     }
   };
 
@@ -329,6 +346,79 @@ export function SettingsPage() {
                   No database configured yet.
                 </p>
               )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* System Diagnostic Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                    <Server className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <CardTitle>System Diagnostic</CardTitle>
+                    <CardDescription>Health check for dependent services</CardDescription>
+                  </div>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={loadHealth}
+                  disabled={isHealthLoading}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isHealthLoading ? 'animate-spin' : ''}`} />
+                  Check
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                {healthStatus ? (
+                  Object.entries(healthStatus.services).map(([key, value]: [string, any]) => (
+                    <div key={key} className="flex items-center justify-between p-3 rounded-lg border bg-muted/20">
+                      <div className="flex items-center gap-3">
+                        <div className={`h-2.5 w-2.5 rounded-full ${
+                          value.status === 'connected' ? 'bg-green-500' : 
+                          value.status === 'error' ? 'bg-red-500' : 'bg-yellow-500'
+                        }`} />
+                        <span className="capitalize font-medium">{key}</span>
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-xs font-medium ${
+                          value.status === 'connected' ? 'text-green-500' : 
+                          value.status === 'error' ? 'text-red-500' : 'text-yellow-500'
+                        }`}>
+                          {value.status.toUpperCase()}
+                        </p>
+                        {value.message && (
+                          <p className="text-[10px] text-muted-foreground truncate max-w-[150px]">
+                            {value.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="py-8 text-center text-muted-foreground">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Running diagnostic...</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-2">
+                <p className="text-xs text-muted-foreground italic">
+                  Last check: {healthStatus ? new Date(healthStatus.timestamp).toLocaleTimeString() : 'Never'}
+                </p>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
