@@ -389,7 +389,14 @@ export function SettingsPage() {
                           value.status === 'connected' ? 'bg-green-500' : 
                           value.status === 'error' ? 'bg-red-500' : 'bg-yellow-500'
                         }`} />
-                        <span className="capitalize font-medium">{key}</span>
+                        <span className="capitalize font-medium">
+                          {key === 'llm' ? 'AI Model' : key}
+                        </span>
+                        {value.provider && (
+                          <Badge variant="outline" className="text-[10px] h-5 px-1.5 ml-2 uppercase">
+                            {value.provider.replace('_', ' ')}
+                          </Badge>
+                        )}
                       </div>
                       <div className="text-right">
                         <p className={`text-xs font-medium ${
@@ -398,7 +405,12 @@ export function SettingsPage() {
                         }`}>
                           {value.status.toUpperCase()}
                         </p>
-                        {value.message && (
+                        {value.model && (
+                          <p className="text-[10px] text-muted-foreground truncate max-w-[150px]">
+                            {value.model}
+                          </p>
+                        )}
+                        {value.message && !value.model && (
                           <p className="text-[10px] text-muted-foreground truncate max-w-[150px]">
                             {value.message}
                           </p>
