@@ -29,36 +29,16 @@ import {
   RenderHeatmap,
 } from "./ChartRenderers";
 
-interface Column {
-  Header?: string;
-  header?: string;
-  accessor: string;
-}
+// ============================================
+// EXTENSIBLE TYPES - open to new components
+// ============================================
 
 interface ComponentProps {
-  title?: string;
-  value?: any;
-  description?: string;
-  trend?: number;
-  icon?: string;
-  columns?: Column[];
-  data?: any[];
-  caption?: string;
-  label?: string;
-  variant?: "default" | "secondary" | "destructive" | "outline";
-  // Chart-specific props
-  categoryKey?: string;
-  dataKey?: string | string[];
-  nameKey?: string;
-  maxValue?: number;
-  // Heatmap-specific props
-  xKey?: string;
-  yKey?: string;
-  valueKey?: string;
+  [key: string]: any; // Open to any props from backend
 }
 
 interface ComponentSpec {
-  type: 'Card' | 'Table' | 'Progress' | 'Badge' | 'BarChart' | 'LineChart' | 'AreaChart' | 'PieChart' | 'RadialChart' | 'Heatmap';
+  type: string; // Open to any component type from metadata
   props: ComponentProps;
 }
 
@@ -83,6 +63,24 @@ interface DynamicRendererProps {
   isLoading: boolean;
   error: string | null;
 }
+
+// ============================================
+// COMPONENT REGISTRY - single source of truth
+// Adding a new component = one line here + the renderer
+// ============================================
+
+const COMPONENT_REGISTRY: Record<string, React.FC<any>> = {
+  Card: RenderCard,
+  Table: RenderTable,
+  Progress: RenderProgress,
+  Badge: RenderBadge,
+  BarChart: RenderBarChart,
+  LineChart: RenderLineChart,
+  AreaChart: RenderAreaChart,
+  PieChart: RenderPieChart,
+  RadialChart: RenderRadialChart,
+  Heatmap: RenderHeatmap,
+};
 
 /**
  * DynamicRenderer - Renders UI components based on a UI specification from the backend
@@ -161,7 +159,8 @@ export function DynamicRenderer({ uiSpec, isLoading, error }: DynamicRendererPro
 }
 
 /**
- * Render a single component based on its type and props
+ * Render a single component using the registry pattern.
+ * All props are spread through — no manual destructuring, no silent prop drops.
  */
 function renderComponent(component: ComponentSpec) {
   if (!component || !component.type) {
@@ -170,40 +169,24 @@ function renderComponent(component: ComponentSpec) {
 
   const { type, props } = component;
 
-  switch (type) {
-    case 'Card':
-      return <RenderCard {...props} />;
-    case 'Table':
-      return <RenderTable {...props} />;
-    case 'Progress':
-      return <RenderProgress {...props} />;
-    case 'Badge':
-      return <RenderBadge {...props} />;
-    // Chart Components
-    case 'BarChart':
-      return <RenderBarChart data={props.data || []} categoryKey={props.categoryKey || ''} dataKey={props.dataKey || ''} />;
-    case 'LineChart':
-      return <RenderLineChart data={props.data || []} categoryKey={props.categoryKey || ''} dataKey={props.dataKey || ''} />;
-    case 'AreaChart':
-      return <RenderAreaChart data={props.data || []} categoryKey={props.categoryKey || ''} dataKey={props.dataKey || ''} />;
-    case 'PieChart':
-      return <RenderPieChart data={props.data || []} categoryKey={props.categoryKey || ''} dataKey={props.dataKey || ''} nameKey={props.nameKey} />;
-    case 'RadialChart':
-      return <RenderRadialChart data={props.data || []} categoryKey={props.categoryKey || ''} dataKey={props.dataKey || ''} nameKey={props.nameKey} maxValue={props.maxValue} />;
-    case 'Heatmap':
-      return <RenderHeatmap data={props.data || []} xKey={props.xKey || ''} yKey={props.yKey || ''} valueKey={props.valueKey || ''} />;
-    default:
-      return (
-        <Card className="border-yellow-500">
-          <CardContent className="pt-6">
-            <p className="text-yellow-600">Unsupported component type: {type}</p>
-            <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-auto">
-              {JSON.stringify(props, null, 2)}
-            </pre>
-          </CardContent>
-        </Card>
-      );
+  // Look up renderer in registry
+  const Renderer = COMPONENT_REGISTRY[type];
+  
+  if (!Renderer) {
+    return (
+      <Card className="border-yellow-500">
+        <CardContent className="pt-6">
+          <p className="text-yellow-600">Unsupported component type: {type}</p>
+          <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-auto">
+            {JSON.stringify(props, null, 2)}
+          </pre>
+        </CardContent>
+      </Card>
+    );
   }
+
+  // Spread ALL props through — this fixes seriesKey, nameKey, maxValue, etc.
+  return <Renderer {...props} />;
 }
 
 function InsightsSection({ insights }: { insights: Insight[] }) {
@@ -335,7 +318,7 @@ function InsightsSection({ insights }: { insights: Insight[] }) {
 /**
  * Card Component Renderer
  */
-function RenderCard({ title, value, description, trend, icon }: ComponentProps) {
+function RenderCard({ title, value, description, trend, icon }: any) {
   return (
     <Card className="max-w-sm">
       <CardHeader className="pb-2">
@@ -365,7 +348,7 @@ function RenderCard({ title, value, description, trend, icon }: ComponentProps) 
 /**
  * Table Component Renderer
  */
-function RenderTable({ columns, data, caption }: ComponentProps) {
+function RenderTable({ columns, data, caption }: any) {
   if (!columns || !data || data.length === 0) {
     return (
       <Card>
@@ -388,7 +371,7 @@ function RenderTable({ columns, data, caption }: ComponentProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                {columns.map((col, idx) => (
+                {columns.map((col: any, idx: number) => (
                   <TableHead key={idx} className="font-mono text-xs uppercase whitespace-nowrap">
                     {col.Header || col.header || col.accessor}
                   </TableHead>
@@ -396,9 +379,9 @@ function RenderTable({ columns, data, caption }: ComponentProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.slice(0, 100).map((row, rowIdx) => (
+              {data.slice(0, 100).map((row: any, rowIdx: number) => (
                 <TableRow key={rowIdx}>
-                  {columns.map((col, colIdx) => (
+                  {columns.map((col: any, colIdx: number) => (
                     <TableCell key={colIdx} className="font-mono text-sm">
                       {formatValue(row[col.accessor])}
                     </TableCell>
@@ -421,7 +404,7 @@ function RenderTable({ columns, data, caption }: ComponentProps) {
 /**
  * Progress Component Renderer
  */
-function RenderProgress({ value, label }: ComponentProps) {
+function RenderProgress({ value, label }: any) {
   const safeValue = Math.min(100, Math.max(0, Number(value) || 0));
   
   return (
@@ -442,7 +425,7 @@ function RenderProgress({ value, label }: ComponentProps) {
 /**
  * Badge Component Renderer
  */
-function RenderBadge({ label, variant = 'default' }: ComponentProps) {
+function RenderBadge({ label, variant = 'default' }: any) {
   return (
     <Badge variant={variant} className="text-lg px-4 py-2">
       {label}

@@ -134,6 +134,29 @@ function preprocessTimeSeries(
   return { data: processed, categoryKey: '__period__' };
 }
 
+/**
+ * Ensures specified columns are numeric so that Recharts doesn't calculate Y-axis domains
+ * using alphabetical string comparison (where "81000" > "600000").
+ * PostgreSQL pg driver returns BigInt and Decimal as strings by default.
+ */
+function parseNumericColumns(data: any[], numericKeys: string[]): any[] {
+  if (!data || data.length === 0 || !numericKeys || numericKeys.length === 0) return data;
+  
+  return data.map(row => {
+    const newRow = { ...row };
+    numericKeys.forEach(k => {
+      const val = newRow[k];
+      if (typeof val === 'string' && val.trim() !== '') {
+        const parsed = parseFloat(val);
+        if (!isNaN(parsed)) {
+          newRow[k] = parsed;
+        }
+      }
+    });
+    return newRow;
+  });
+}
+
 interface ChartProps {
   data: any[];
   categoryKey: string;
@@ -150,10 +173,13 @@ interface ChartProps {
 export function RenderBarChart({ data, categoryKey, dataKey, seriesKey }: ChartProps) {
   // Preprocess: synthesize compound period label when year column co-exists with a time unit
   const pre = preprocessTimeSeries(data, categoryKey);
-  data = pre.data;
   categoryKey = pre.categoryKey;
 
-  const valueKey = Array.isArray(dataKey) ? dataKey[0] : dataKey;
+  const valueKeys = Array.isArray(dataKey) ? dataKey : [dataKey];
+  // Parse numeric values before pivoting so Recharts scales correctly
+  data = parseNumericColumns(pre.data, valueKeys);
+
+  const valueKey = valueKeys[0];
   
   // If seriesKey provided, pivot data for multi-series grouped bars
   let chartData = data;
@@ -221,10 +247,13 @@ export function RenderBarChart({ data, categoryKey, dataKey, seriesKey }: ChartP
 export function RenderLineChart({ data, categoryKey, dataKey, seriesKey }: ChartProps) {
   // Preprocess: synthesize compound period label when year column co-exists with a time unit
   const pre = preprocessTimeSeries(data, categoryKey);
-  data = pre.data;
   categoryKey = pre.categoryKey;
 
-  const valueKey = Array.isArray(dataKey) ? dataKey[0] : dataKey;
+  const valueKeys = Array.isArray(dataKey) ? dataKey : [dataKey];
+  // Parse numeric values before pivoting so Recharts scales correctly
+  data = parseNumericColumns(pre.data, valueKeys);
+
+  const valueKey = valueKeys[0];
   
   // If seriesKey provided, pivot data for multi-series
   let chartData = data;
@@ -295,10 +324,11 @@ export function RenderLineChart({ data, categoryKey, dataKey, seriesKey }: Chart
 export function RenderAreaChart({ data, categoryKey, dataKey }: ChartProps) {
   // Preprocess: synthesize compound period label when year column co-exists with a time unit
   const pre = preprocessTimeSeries(data, categoryKey);
-  data = pre.data;
   categoryKey = pre.categoryKey;
 
   const keys = Array.isArray(dataKey) ? dataKey : [dataKey];
+  data = parseNumericColumns(pre.data, keys);
+
   const chartConfig = buildChartConfig(keys);
 
   return (
