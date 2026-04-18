@@ -41,7 +41,7 @@ export const CommandBar = forwardRef<CommandBarHandle, CommandBarProps>(
     }, [isProcessing]);
 
     return (
-      <div className="fixed bottom-0 left-0 w-full z-40 bg-gradient-to-t from-surface via-surface/90 to-transparent pt-20 pb-8 px-4 pointer-events-none">
+      <div className="fixed bottom-0 left-0 w-full z-40 pb-8 px-4 pointer-events-none">
         <div className="max-w-4xl mx-auto w-full pointer-events-auto">
 
           {/* Pending Reply Pill */}
@@ -96,15 +96,6 @@ export const CommandBar = forwardRef<CommandBarHandle, CommandBarProps>(
 
               <div className="flex items-center gap-2 pr-2 shrink-0">
                 <button
-                  type="button"
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-outline hover:bg-surface-variant hover:text-on-surface transition-colors disabled:opacity-50"
-                  disabled={isProcessing}
-                  title="Voice input"
-                >
-                  <span className="material-symbols-outlined text-[20px]">mic</span>
-                </button>
-
-                <button
                   type="submit"
                   disabled={isProcessing || !query.trim()}
                   className="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100 shadow-sm"
@@ -118,24 +109,6 @@ export const CommandBar = forwardRef<CommandBarHandle, CommandBarProps>(
               </div>
             </form>
           </motion.div>
-
-          {/* Quick Actions Footer */}
-          <div className="flex justify-center gap-4 mt-4 opacity-70">
-            <button className="text-[10px] font-bold text-outline uppercase tracking-widest hover:text-primary transition-colors flex items-center gap-1">
-              <span className="material-symbols-outlined text-[12px]">summarize</span>
-              Summarize Last
-            </button>
-            <span className="text-outline/20">•</span>
-            <button className="text-[10px] font-bold text-outline uppercase tracking-widest hover:text-primary transition-colors flex items-center gap-1">
-              <span className="material-symbols-outlined text-[12px]">download</span>
-              Export Data
-            </button>
-            <span className="text-outline/20">•</span>
-            <button className="text-[10px] font-bold text-outline uppercase tracking-widest hover:text-primary transition-colors flex items-center gap-1">
-              <span className="material-symbols-outlined text-[12px]">clear_all</span>
-              Clear Chat
-            </button>
-          </div>
         </div>
       </div>
     );

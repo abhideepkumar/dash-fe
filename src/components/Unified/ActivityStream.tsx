@@ -34,7 +34,7 @@ export function ActivityStream({ stream, onReply, onCommand }: ActivityStreamPro
 
   if (stream.length === 0) {
     return (
-      <div className="flex flex-col items-center h-full opacity-60">
+      <div className="flex flex-col items-center h-full opacity-80 py-20">
         <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6 shadow-sm">
           <span className="material-symbols-outlined text-[32px] text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
             assistant

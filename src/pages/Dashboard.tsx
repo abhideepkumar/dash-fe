@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Toaster, toast } from "sonner";
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
@@ -14,6 +15,7 @@ interface PendingReply {
 }
 
 export function DashboardPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   
   // Sync State
@@ -29,6 +31,18 @@ export function DashboardPage() {
 
   const commandBarRef = useRef<CommandBarHandle>(null);
   const sessionId = user?.id ? `user_${user.id}` : null;
+
+  // Auto-run query from URL param "q"
+  useEffect(() => {
+    const query = searchParams.get('q');
+    if (query && sessionId && !isProcessing && stream.length === 0) {
+      handleCommand(query);
+      // Clean up the URL after starting execution
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('q');
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [sessionId, searchParams]);
 
   // ===========================================================================
   // Core query runner

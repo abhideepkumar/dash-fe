@@ -12,10 +12,6 @@ export function SchemaExplorerPage() {
           </p>
         </div>
         <div className="flex gap-4">
-          <button className="bg-surface-container-lowest ghost-border px-6 py-3 rounded-full text-sm font-semibold flex items-center gap-2 text-slate-700 hover:bg-surface-container-low transition-colors">
-            <span className="material-symbols-outlined text-lg">filter_list</span>
-            Filter Views
-          </button>
           <button className="bg-primary text-on-primary px-8 py-3 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg shadow-primary/10">
             <span className="material-symbols-outlined text-lg">refresh</span>
             Re-Sync Schema
@@ -145,9 +141,6 @@ export function SchemaExplorerPage() {
               <span className="bg-surface-container text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase">date</span>
             </div>
           </div>
-          <button className="mt-8 text-primary text-xs font-bold uppercase tracking-widest flex items-center gap-2 group-hover:gap-4 transition-all">
-            View Full Schema <span className="material-symbols-outlined text-sm">arrow_forward</span>
-          </button>
         </div>
 
         {/* Table Card: Logs */}
@@ -252,11 +245,6 @@ export function SchemaExplorerPage() {
           </div>
           <div className="w-full md:w-80 h-48 rounded-xl overflow-hidden ghost-border relative">
             <img alt="Schema Visualization" className="w-full h-full object-cover grayscale opacity-40" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCm_eokzYY2KKyy9MznRvIf_JmRSxbeggpOlpwxPutAe9HceHuznpJUEV2tkmjAO_uNIddEhzN2X-w21KkvJJOEqLIcHw0pB24qQJdBUQYzSi4ikSVHFbkxolGPIFc93TGjnbI43FDUzO37nIcVfL_A6-lax_i_acGSHmvPYvl-rgU83aAII3zftLZW48gECo5bOZeNnMmaNWsW0mJzUT6KzCiyEWhcKX5sFoDC0LySq2pxuXCFfW7U461SZvKZrM-tzGJAOMQZe9XK" />
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-emerald-950/20 backdrop-blur-[2px]">
-              <button className="bg-white/90 text-emerald-900 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white transition-all shadow-xl">
-                View ER Diagram
-              </button>
-            </div>
           </div>
         </div>
       </section>

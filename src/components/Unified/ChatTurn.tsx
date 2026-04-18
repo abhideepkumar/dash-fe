@@ -12,6 +12,7 @@ interface ChatTurnProps {
 
 export function ChatTurn({ turn, onReply, onCommand }: ChatTurnProps) {
   const [showSql, setShowSql] = useState(false);
+  const parentItem = turn.history?.length > 0 ? turn.history[turn.history.length - 1] : null;
 
   const copySQL = () => {
     if (turn.sql) navigator.clipboard.writeText(turn.sql);
@@ -24,8 +25,25 @@ export function ChatTurn({ turn, onReply, onCommand }: ChatTurnProps) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="flex justify-end w-full"
+        className="flex flex-col items-end gap-2 w-full"
       >
+        {/* Replied to Context moved here */}
+        {parentItem && (
+          <motion.div 
+            initial={{ opacity: 0, x: 5 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center gap-2 px-1 group/reply cursor-default"
+          >
+            <p className="text-xs text-slate-400 italic truncate max-w-[200px] lg:max-w-md group-hover/reply:text-slate-600 transition-colors">
+              "{parentItem.query}"
+            </p>
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-100/50 dark:bg-slate-800/50 px-2 py-0.5 rounded-lg border border-slate-200/50">
+              <span className="material-symbols-outlined text-[12px]">reply</span>
+              <span>Replied to</span>
+            </div>
+          </motion.div>
+        )}
+
         <div className="bg-surface-variant text-on-surface px-6 py-3.5 rounded-3xl rounded-tr-sm max-w-[80%] shadow-sm border border-outline-variant/30 text-[15px] font-medium leading-relaxed">
           {turn.query}
         </div>

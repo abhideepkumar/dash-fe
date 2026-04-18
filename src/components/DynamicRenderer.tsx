@@ -195,111 +195,66 @@ function InsightsSection({ insights }: { insights: Insight[] }) {
     }
   };
 
-  const getInsightStyles = (type: string) => {
-    const baseClasses = "relative overflow-hidden rounded-[1.5rem] border backdrop-blur-xl transition-all duration-300 hover:shadow-sm";
-    switch (type) {
-      case 'summary':
-        return `${baseClasses} border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10`;
-      case 'trend':
-        return `${baseClasses} border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10`;
-      case 'peak':
-        return `${baseClasses} border-purple-500/20 bg-purple-500/5 hover:bg-purple-500/10`;
-      case 'comparison':
-        return `${baseClasses} border-cyan-500/20 bg-cyan-500/5 hover:bg-cyan-500/10`;
-      case 'anomaly':
-        return `${baseClasses} border-error/20 bg-error/5 hover:bg-error/10`;
-      case 'recommendation':
-        return `${baseClasses} border-primary/20 bg-primary/5 hover:bg-primary/10`;
-      default:
-        return `${baseClasses} border-outline-variant/20 bg-surface-container-low hover:bg-surface-container`;
-    }
-  };
-
   const getIconColor = (type: string) => {
     switch (type) {
-      case 'summary': return 'text-blue-600 bg-blue-500/10';
-      case 'trend': return 'text-emerald-600 bg-emerald-500/10';
-      case 'peak': return 'text-purple-600 bg-purple-500/10';
-      case 'comparison': return 'text-cyan-600 bg-cyan-500/10';
-      case 'anomaly': return 'text-error bg-error/10';
-      case 'recommendation': return 'text-primary bg-primary/10';
-      default: return 'text-on-surface-variant bg-surface-variant/50';
-    }
-  };
-
-  const getBorderColor = (type: string) => {
-    switch (type) {
-      case 'summary': return 'bg-blue-500';
-      case 'trend': return 'bg-emerald-500';
-      case 'peak': return 'bg-purple-500';
-      case 'comparison': return 'bg-cyan-500';
-      case 'anomaly': return 'bg-error';
-      case 'recommendation': return 'bg-primary';
-      default: return 'bg-outline-variant';
+      case 'summary': return 'text-blue-500';
+      case 'trend': return 'text-emerald-500';
+      case 'peak': return 'text-purple-500';
+      case 'comparison': return 'text-cyan-500';
+      case 'anomaly': return 'text-red-500';
+      case 'recommendation': return 'text-teal-500';
+      default: return 'text-slate-400';
     }
   };
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 5 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.3, duration: 0.4 }}
-      className="mt-6"
+      transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }}
+      className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800"
     >
-      <div className="flex items-center gap-2 mb-3 px-1">
-        <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shadow-sm">
-          <span className="material-symbols-outlined text-[16px] text-amber-600" style={{ fontVariationSettings: "'FILL' 1" }}>lightbulb</span>
-        </div>
-        <div>
-           <h3 className="text-sm font-bold font-headline text-on-surface leading-none">Key Insights</h3>
-        </div>
+      <div className="flex items-center gap-2 mb-4 px-1 opacity-80">
+        <span className="material-symbols-outlined text-[16px] text-slate-400" style={{ fontVariationSettings: "'FILL' 1" }}>lightbulb</span>
+        <h3 className="text-sm font-medium tracking-tight text-slate-600 dark:text-slate-300">Key Insights</h3>
       </div>
       
-      <div className="space-y-1.5 flex flex-col">
+      <div className="space-y-4">
         {insights.map((insight, index) => (
           <motion.div
             key={index}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 + index * 0.1, duration: 0.3 }}
-            className={`${getInsightStyles(insight.type)} py-1`}
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 + index * 0.05, duration: 0.4 }}
+            className="flex items-start gap-3.5 px-1 group"
           >
-            {/* Left emphasis border */}
-            <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${getBorderColor(insight.type)} ${insight.priority === 'high' ? 'opacity-100' : 'opacity-60'}`}></div>
-            
-            <div className="p-2.5 pl-4 flex items-start gap-3">
-              <div className={`mt-0.5 w-7 h-7 shrink-0 rounded-lg flex items-center justify-center border border-current/10 ${getIconColor(insight.type)} shadow-sm`}>
-                <span className="material-symbols-outlined text-[16px]">
-                  {getInsightIconName(insight.type)}
-                </span>
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-medium font-body text-on-surface leading-snug">
-                  {insight.text}
-                </p>
-                {insight.evidence && (
-                  <div className="mt-2 pt-2 border-t border-current/5">
-                    <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border bg-white/40 border-white/60">
-                       <span className="material-symbols-outlined text-[12px] text-outline">data_object</span>
-                       <span className="text-[10px] font-mono text-on-surface-variant break-all">
-                         {insight.evidence}
-                       </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              {/* High Priority Badge */}
-              <div className="shrink-0 flex items-center">
-                {insight.priority === 'high' && (
-                  <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-widest font-bold px-2 py-1 rounded-full bg-error/10 text-error border border-error/20 whitespace-nowrap">
-                    <span className="material-symbols-outlined text-[10px]">error</span>
-                    High
-                  </span>
-                )}
-              </div>
+            <div className={`mt-0.5 shrink-0 transition-colors ${getIconColor(insight.type)}`}>
+              <span className="material-symbols-outlined text-[16px] block opacity-80">
+                {getInsightIconName(insight.type)}
+              </span>
             </div>
+            
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-normal text-slate-700 dark:text-slate-300 leading-relaxed max-w-2xl">
+                {insight.text}
+              </p>
+              
+              {/* {insight.evidence && (
+                <div className="mt-1.5 flex items-center gap-1.5 opacity-40 group-hover:opacity-80 transition-opacity">
+                  <span className="material-symbols-outlined text-[12px] text-slate-400">data_object</span>
+                  <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate">
+                    {insight.evidence}
+                  </span>
+                </div>
+              )} */}
+            </div>
+            
+            {/* Minimal Priority Indicator */}
+            {insight.priority === 'high' && (
+              <div className="shrink-0 flex items-center pt-2 px-2" title="High Priority">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+              </div>
+            )}
           </motion.div>
         ))}
       </div>

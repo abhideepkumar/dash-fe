@@ -8,7 +8,6 @@ import { LoginPage } from "./pages/Login.tsx"
 import { SettingsPage } from "./pages/Settings.tsx"
 import { SchemaExplorerPage } from "./pages/SchemaExplorer.tsx"
 import { ConnectionSetupPage } from "./pages/ConnectionSetup.tsx"
-import { SavedViewsPage } from "./pages/SavedViews.tsx"
 import { HistoryPage } from "./pages/History.tsx"
 
 import { AuthProvider } from "./contexts/AuthContext.tsx"
@@ -36,7 +35,6 @@ function AppRoutes() {
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/schema" element={<SchemaExplorerPage />} />
-        <Route path="/saved" element={<SavedViewsPage />} />
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
