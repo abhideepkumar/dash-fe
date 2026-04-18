@@ -77,7 +77,7 @@ export function LoginPage() {
           <div className="w-14 h-14 bg-gradient-to-br from-primary to-primary-container rounded-lg flex items-center justify-center shadow-lg">
             <span className="material-symbols-outlined text-white text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>database</span>
           </div>
-          <h2 className="font-headline text-xl font-bold tracking-tight text-on-surface">Conversational Canvas</h2>
+          <h2 className="font-headline text-xl font-bold tracking-tight text-on-surface">Tabologue</h2>
         </div>
 
         {/* Glass Canvas (The Signature Component) */}

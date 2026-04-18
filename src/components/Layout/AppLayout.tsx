@@ -126,7 +126,7 @@ export function AppLayout() {
             <span className="material-symbols-outlined text-[24px]">menu</span>
           </button>
           
-          <span className="text-sm lg:text-base font-black text-slate-900 font-headline tracking-tight">Conversational Canvas</span>
+          <span className="text-sm lg:text-base font-black text-slate-900 font-headline tracking-tight">Tabologue</span>
         </div>
         
         <div className="flex items-center gap-6">
