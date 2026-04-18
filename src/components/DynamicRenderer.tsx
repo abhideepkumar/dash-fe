@@ -27,6 +27,11 @@ import {
   RenderPieChart,
   RenderRadialChart,
   RenderHeatmap,
+  RenderScatterChart,
+  RenderWaterfallChart,
+  RenderFunnelChart,
+  RenderTreeMap,
+  RenderComboChart,
 } from "./ChartRenderers";
 
 // ============================================
@@ -65,22 +70,10 @@ interface DynamicRendererProps {
 }
 
 // ============================================
-// COMPONENT REGISTRY - single source of truth
-// Adding a new component = one line here + the renderer
+// COMPONENT REGISTRY - defined after all renderers below
+// (forward-declared here so TypeScript knows the type)
 // ============================================
-
-const COMPONENT_REGISTRY: Record<string, React.FC<any>> = {
-  Card: RenderCard,
-  Table: RenderTable,
-  Progress: RenderProgress,
-  Badge: RenderBadge,
-  BarChart: RenderBarChart,
-  LineChart: RenderLineChart,
-  AreaChart: RenderAreaChart,
-  PieChart: RenderPieChart,
-  RadialChart: RenderRadialChart,
-  Heatmap: RenderHeatmap,
-};
+// See COMPONENT_REGISTRY definition after all renderer functions at bottom of file.
 
 /**
  * DynamicRenderer - Renders UI components based on a UI specification from the backend
@@ -434,6 +427,128 @@ function RenderBadge({ label, variant = 'default' }: any) {
 }
 
 /**
+ * StatGrid — responsive grid of KPI metric tiles
+ * Renders a metrics array (each with title, value, description, trend)
+ */
+function RenderStatGrid({ metrics }: { metrics: Array<{ title: string; value: any; description?: string; trend?: number }> }) {
+  if (!metrics || metrics.length === 0) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <p className="text-muted-foreground">No metrics to display</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className={`grid gap-4 ${
+      metrics.length === 2 ? 'grid-cols-2' :
+      metrics.length === 3 ? 'grid-cols-3' :
+      metrics.length === 4 ? 'grid-cols-2 md:grid-cols-4' :
+      'grid-cols-2 md:grid-cols-3'
+    }`}>
+      {metrics.map((metric, i) => (
+        <Card key={i}>
+          <CardHeader className="pb-2">
+            <CardDescription className="text-xs font-medium uppercase tracking-wider">
+              {metric.title}
+            </CardDescription>
+            <CardTitle className="text-3xl font-bold">
+              {formatValue(metric.value)}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {metric.description && (
+              <p className="text-sm text-muted-foreground">{metric.description}</p>
+            )}
+            {metric.trend !== undefined && metric.trend !== null && (
+              <div className={`flex items-center gap-1 mt-1 text-sm font-medium ${
+                Number(metric.trend) >= 0 ? 'text-emerald-600' : 'text-red-500'
+              }`}>
+                {Number(metric.trend) >= 0
+                  ? <TrendingUp className="h-3.5 w-3.5" />
+                  : <TrendingDown className="h-3.5 w-3.5" />}
+                <span>{Number(metric.trend) >= 0 ? '+' : ''}{metric.trend}%</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * GaugeChart — semicircular gauge with Red/Yellow/Green zones
+ * Pure SVG implementation, no external dependencies needed.
+ */
+function RenderGaugeChart({ value, max = 100, min = 0, label, unit = '' }: any) {
+  const safeValue = Math.min(max, Math.max(min, Number(value) || 0));
+  const range = max - min;
+  const pct = range > 0 ? ((safeValue - min) / range) * 100 : 0;
+
+  // Color based on percentage thresholds
+  const color = pct < 33 ? 'hsl(0, 72%, 51%)' : pct < 66 ? 'hsl(47, 95%, 53%)' : 'hsl(142, 71%, 45%)';
+  // Arc circumference for a 90-radius semicircle = π * 90 ≈ 282.7
+  const ARC_LENGTH = 282.7;
+
+  return (
+    <div className="flex flex-col items-center max-w-xs mx-auto">
+      {/* SVG-based semicircle gauge */}
+      <div className="relative w-64 h-36 overflow-hidden">
+        <svg viewBox="0 0 200 110" className="w-full h-full">
+          {/* Background track */}
+          <path
+            d="M 10 100 A 90 90 0 0 1 190 100"
+            fill="none"
+            stroke="hsl(var(--muted))"
+            strokeWidth="18"
+            strokeLinecap="round"
+          />
+          {/* Danger zone tint (full arc at low opacity) */}
+          <path
+            d="M 10 100 A 90 90 0 0 1 190 100"
+            fill="none"
+            stroke="hsl(0,72%,51%)"
+            strokeWidth="18"
+            strokeLinecap="butt"
+            strokeOpacity={0.12}
+          />
+          {/* Value arc */}
+          <path
+            d="M 10 100 A 90 90 0 0 1 190 100"
+            fill="none"
+            stroke={color}
+            strokeWidth="18"
+            strokeLinecap="round"
+            strokeDasharray={`${(pct / 100) * ARC_LENGTH} ${ARC_LENGTH}`}
+          />
+          {/* Center value */}
+          <text x="100" y="88" textAnchor="middle" fontSize="28" fontWeight="700" fill="hsl(var(--foreground))">
+            {Number(safeValue).toLocaleString()}{unit}
+          </text>
+          <text x="100" y="108" textAnchor="middle" fontSize="10" fill="hsl(var(--muted-foreground))">
+            {label || ''}
+          </text>
+        </svg>
+      </div>
+      {/* Zone labels */}
+      <div className="flex items-center justify-between w-full px-2 mt-1 text-[10px] text-muted-foreground">
+        <span className="text-red-500 font-medium">{Number(min).toLocaleString()}</span>
+        <span className="text-yellow-500 font-medium">{Number(min + range * 0.33).toFixed(0)}</span>
+        <span className="text-emerald-500 font-medium">{Number(min + range * 0.66).toFixed(0)}</span>
+        <span className="text-emerald-600 font-semibold">{Number(max).toLocaleString()}{unit}</span>
+      </div>
+      {/* Status badge */}
+      <div className="mt-3 px-3 py-1 rounded-full text-xs font-bold" style={{ background: color + '20', color }}>
+        {pct < 33 ? 'Below Target' : pct < 66 ? 'On Track' : 'Target Achieved'}
+      </div>
+    </div>
+  );
+}
+
+/**
  * Format a value for display
  */
 function formatValue(value: any) {
@@ -449,5 +564,31 @@ function formatValue(value: any) {
   }
   return String(value);
 }
+
+// ============================================
+// COMPONENT REGISTRY - defined here AFTER all renderer functions
+// so all function references are guaranteed to be in scope.
+// ============================================
+const COMPONENT_REGISTRY: Record<string, React.FC<any>> = {
+  // Original components
+  Card: RenderCard,
+  Table: RenderTable,
+  Progress: RenderProgress,
+  Badge: RenderBadge,
+  BarChart: RenderBarChart,
+  LineChart: RenderLineChart,
+  AreaChart: RenderAreaChart,
+  PieChart: RenderPieChart,
+  RadialChart: RenderRadialChart,
+  Heatmap: RenderHeatmap,
+  // New components
+  ScatterChart: RenderScatterChart,
+  WaterfallChart: RenderWaterfallChart,
+  FunnelChart: RenderFunnelChart,
+  TreeMap: RenderTreeMap,
+  ComboChart: RenderComboChart,
+  StatGrid: RenderStatGrid,
+  GaugeChart: RenderGaugeChart,
+};
 
 export default DynamicRenderer;

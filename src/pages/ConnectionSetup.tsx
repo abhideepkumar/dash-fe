@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '@/lib/api';
 
 export function ConnectionSetupPage() {
   const navigate = useNavigate();
@@ -10,13 +11,29 @@ export function ConnectionSetupPage() {
     user: '',
     password: ''
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate connection
-    console.log("Connecting with", dbConfig);
-    // On success navigate back to canvas/dashboard
-    navigate('/');
+    setIsLoading(false);
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      console.log("Connecting with", dbConfig);
+      const result = await api.user.connect(dbConfig);
+      
+      if (result.success) {
+        // On success navigate back to canvas/dashboard
+        navigate('/');
+      }
+    } catch (err: any) {
+      console.error("Connection failed:", err);
+      setError(err.message || "Failed to connect to database. Please check your credentials.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -128,13 +145,21 @@ export function ConnectionSetupPage() {
                 </div>
               </div>
 
+              {/* Error Message */}
+              {error && (
+                <div className="p-3 rounded-lg bg-error/10 border border-error/20 text-error text-xs">
+                  {error}
+                </div>
+              )}
+
               {/* CTA Section */}
               <div className="pt-4">
                 <button 
-                  className="w-full rounded-full py-4 px-8 bg-gradient-to-br from-primary to-primary-container text-on-primary font-headline font-bold text-sm tracking-tight shadow-lg shadow-primary/20 hover:shadow-primary/30 transform active:scale-[0.98] transition-all duration-150" 
+                  disabled={isLoading}
+                  className="w-full rounded-full py-4 px-8 bg-gradient-to-br from-primary to-primary-container text-on-primary font-headline font-bold text-sm tracking-tight shadow-lg shadow-primary/20 hover:shadow-primary/30 transform active:scale-[0.98] transition-all duration-150 disabled:opacity-50" 
                   type="submit"
                 >
-                  Connect Database
+                  {isLoading ? 'Connecting...' : 'Connect Database'}
                 </button>
               </div>
             </form>

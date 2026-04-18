@@ -88,6 +88,12 @@ export const api = {
     
     syncStatus: () =>
       apiRequest<{ success: boolean; status: string; hasConfig: boolean; lastSyncedAt?: string; tableCount?: number; error?: string }>('/user/sync-status'),
+    
+    connect: (config: any) =>
+      apiRequest<{ success: boolean; message: string; syncStatus: string }>('/user/connect', {
+        method: 'POST',
+        body: JSON.stringify(config),
+      }),
   },
 
   // Query endpoints (existing)

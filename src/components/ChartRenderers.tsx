@@ -18,6 +18,17 @@ import {
   PolarGrid,
   PolarRadiusAxis,
   Label,
+  ScatterChart,
+  Scatter,
+  ZAxis,
+  FunnelChart,
+  Funnel,
+  LabelList,
+  Treemap,
+  ComposedChart,
+  Tooltip,
+  ReferenceLine,
+  Legend,
 } from "recharts";
 
 import {
@@ -656,3 +667,437 @@ export function RenderHeatmap({ data, xKey, yKey, valueKey }: HeatmapProps) {
   );
 }
 
+/**
+ * Scatter Chart Renderer
+ * Supports optional sizeKey for bubble mode
+ */
+interface ScatterProps {
+  data: any[];
+  xKey: string;
+  yKey: string;
+  labelKey?: string;
+  sizeKey?: string;
+}
+
+export function RenderScatterChart({ data, xKey, yKey, labelKey, sizeKey }: ScatterProps) {
+  if (!data || data.length === 0) {
+    return <Card><CardContent className="pt-6"><p className="text-muted-foreground">No data to display</p></CardContent></Card>;
+  }
+
+  const parsedData = data.map(row => ({
+    ...row,
+    [xKey]: parseFloat(String(row[xKey])) || 0,
+    [yKey]: parseFloat(String(row[yKey])) || 0,
+    ...(sizeKey ? { [sizeKey]: parseFloat(String(row[sizeKey])) || 1 } : {}),
+  }));
+
+  const chartConfig: ChartConfig = {
+    scatter: { label: `${formatLabel(yKey)} vs ${formatLabel(xKey)}`, color: CHART_COLORS[0] },
+  };
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <ChartContainer config={chartConfig} className="h-[380px] w-full">
+          <ScatterChart accessibilityLayer margin={{ top: 10, right: 20, bottom: 30, left: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis
+              dataKey={xKey}
+              type="number"
+              name={formatLabel(xKey)}
+              tickLine={false}
+              axisLine={false}
+              tickMargin={10}
+              tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
+              label={{ value: formatLabel(xKey), position: 'insideBottom', offset: -15, fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+            />
+            <YAxis
+              dataKey={yKey}
+              type="number"
+              name={formatLabel(yKey)}
+              tickLine={false}
+              axisLine={false}
+              tickMargin={10}
+              tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
+              label={{ value: formatLabel(yKey), angle: -90, position: 'insideLeft', offset: 15, fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+            />
+            {sizeKey && <ZAxis dataKey={sizeKey} range={[40, 400]} name={formatLabel(sizeKey)} />}
+            <ChartTooltip
+              content={({ active, payload }) => {
+                if (!active || !payload?.length) return null;
+                const d = payload[0]?.payload;
+                return (
+                  <div className="rounded-lg border bg-background p-2 shadow-sm text-xs space-y-1">
+                    {labelKey && d[labelKey] && <p className="font-semibold">{d[labelKey]}</p>}
+                    <p>{formatLabel(xKey)}: <span className="font-mono">{Number(d[xKey]).toLocaleString()}</span></p>
+                    <p>{formatLabel(yKey)}: <span className="font-mono">{Number(d[yKey]).toLocaleString()}</span></p>
+                    {sizeKey && <p>{formatLabel(sizeKey)}: <span className="font-mono">{Number(d[sizeKey]).toLocaleString()}</span></p>}
+                  </div>
+                );
+              }}
+            />
+            <Scatter data={parsedData} fill={CHART_COLORS[0]} fillOpacity={0.75}>
+              {parsedData.map((_, i) => (
+                <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+              ))}
+            </Scatter>
+          </ScatterChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * Waterfall Chart Renderer
+ * Transparent baseline bar + color-coded stacked bar
+ */
+interface WaterfallProps {
+  data: any[];
+  categoryKey: string;
+  valueKey: string;
+}
+
+export function RenderWaterfallChart({ data, categoryKey, valueKey }: WaterfallProps) {
+  if (!data || data.length === 0) {
+    return <Card><CardContent className="pt-6"><p className="text-muted-foreground">No data to display</p></CardContent></Card>;
+  }
+
+  let running = 0;
+  const chartData = data.map(row => {
+    const rawVal = parseFloat(String(row[valueKey])) || 0;
+    const isTotal = String(row[categoryKey]).toLowerCase().includes('total');
+    const base = rawVal >= 0 ? running : running + rawVal;
+    const barValue = Math.abs(rawVal);
+    if (!isTotal) running += rawVal;
+    return { name: row[categoryKey], base, value: barValue, rawValue: rawVal, isPositive: rawVal >= 0, isTotal };
+  });
+
+  const chartConfig: ChartConfig = {
+    base: { label: 'Offset', color: 'transparent' },
+    value: { label: formatLabel(valueKey), color: CHART_COLORS[0] },
+  };
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <ChartContainer config={chartConfig} className="h-[380px] w-full">
+          <BarChart data={chartData} accessibilityLayer>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={10} tickFormatter={(v) => String(v).slice(0, 14)} />
+            <YAxis tickLine={false} axisLine={false} tickMargin={10} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
+            <Tooltip
+              content={({ active, payload }) => {
+                if (!active || !payload?.length) return null;
+                const d = payload[0]?.payload;
+                return (
+                  <div className="rounded-lg border bg-background p-2 shadow-sm text-xs space-y-1">
+                    <p className="font-semibold">{d.name}</p>
+                    <p className={d.isTotal ? 'text-slate-500' : d.isPositive ? 'text-emerald-600' : 'text-red-500'}>
+                      {d.isTotal ? '' : d.isPositive ? '+' : '-'}{Number(d.value).toLocaleString()}
+                    </p>
+                  </div>
+                );
+              }}
+            />
+            <ReferenceLine y={0} stroke="hsl(var(--border))" strokeDasharray="3 3" />
+            <Bar dataKey="base" stackId="wf" fill="transparent" radius={0} />
+            <Bar dataKey="value" stackId="wf" radius={[4, 4, 0, 0]}>
+              {chartData.map((entry, i) => (
+                <Cell
+                  key={i}
+                  fill={entry.isTotal ? 'hsl(217, 19%, 55%)' : entry.isPositive ? 'hsl(142, 71%, 45%)' : 'hsl(0, 72%, 51%)'}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ChartContainer>
+        <div className="flex items-center justify-center gap-4 mt-3 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-emerald-500 inline-block" />Increase</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-red-500 inline-block" />Decrease</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-slate-400 inline-block" />Total</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * Funnel Chart Renderer
+ */
+interface FunnelRendererProps {
+  data: any[];
+  stageKey: string;
+  valueKey: string;
+}
+
+export function RenderFunnelChart({ data, stageKey, valueKey }: FunnelRendererProps) {
+  if (!data || data.length === 0) {
+    return <Card><CardContent className="pt-6"><p className="text-muted-foreground">No data to display</p></CardContent></Card>;
+  }
+
+  const parsedData = data.map((row, i) => ({
+    name: row[stageKey],
+    value: parseFloat(String(row[valueKey])) || 0,
+    fill: CHART_COLORS[i % CHART_COLORS.length],
+  }));
+
+  const maxVal = parsedData[0]?.value || 1;
+  const withConversion = parsedData.map((item, i) => ({
+    ...item,
+    conversionRate: Math.round((item.value / maxVal) * 100),
+    stepRate: i === 0 ? 100 : parsedData[i - 1].value > 0
+      ? Math.round((item.value / parsedData[i - 1].value) * 100) : 0,
+  }));
+
+  const chartConfig: ChartConfig = {
+    value: { label: formatLabel(valueKey), color: CHART_COLORS[0] },
+  };
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <ChartContainer config={chartConfig} className="h-[380px] w-full">
+          <FunnelChart accessibilityLayer>
+            <ChartTooltip
+              content={({ active, payload }) => {
+                if (!active || !payload?.length) return null;
+                const d = payload[0]?.payload;
+                return (
+                  <div className="rounded-lg border bg-background p-2 shadow-sm text-xs space-y-1">
+                    <p className="font-semibold">{d.name}</p>
+                    <p>Count: <span className="font-mono">{Number(d.value).toLocaleString()}</span></p>
+                    <p>Overall: <span className="font-mono font-semibold">{d.conversionRate}%</span></p>
+                    {d.stepRate !== d.conversionRate && (
+                      <p>Step rate: <span className="font-mono">{d.stepRate}%</span></p>
+                    )}
+                  </div>
+                );
+              }}
+            />
+            <Funnel dataKey="value" data={withConversion} isAnimationActive>
+              {withConversion.map((entry, i) => (
+                <Cell key={i} fill={entry.fill} />
+              ))}
+              <LabelList
+                position="right"
+                content={(props: any) => {
+                  const { x, y, width, height, index } = props;
+                  const entry = withConversion[Number(index)];
+                  if (!entry) return null;
+                  return (
+                    <text
+                      x={Number(x) + Number(width) + 8}
+                      y={Number(y) + Number(height) / 2}
+                      fill="hsl(var(--foreground))"
+                      fontSize={11}
+                      textAnchor="start"
+                      dominantBaseline="middle"
+                    >
+                      <tspan fontWeight="600">{entry.name}</tspan>
+                      <tspan dx={5} fill="hsl(var(--muted-foreground))">
+                        {Number(entry.value).toLocaleString()} ({entry.conversionRate}%)
+                      </tspan>
+                    </text>
+                  );
+                }}
+              />
+            </Funnel>
+          </FunnelChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * TreeMap Renderer
+ */
+interface TreeMapProps {
+  data: any[];
+  nameKey: string;
+  valueKey: string;
+}
+
+export function RenderTreeMap({ data, nameKey, valueKey }: TreeMapProps) {
+  if (!data || data.length === 0) {
+    return <Card><CardContent className="pt-6"><p className="text-muted-foreground">No data to display</p></CardContent></Card>;
+  }
+
+  const parsedData = data.map((row, i) => ({
+    name: String(row[nameKey]),
+    size: parseFloat(String(row[valueKey])) || 0,
+    colorIndex: i,
+  }));
+
+  const total = parsedData.reduce((sum, d) => sum + d.size, 0);
+
+  const CustomContent = (props: any) => {
+    const { x, y, width, height, name, size, colorIndex } = props;
+    const fill = CHART_COLORS[colorIndex % CHART_COLORS.length];
+    const pct = total > 0 ? ((size / total) * 100).toFixed(1) : '0';
+    const fontSize = Math.min(13, Math.max(9, width / 10));
+
+    if (width < 30 || height < 20) {
+      return <rect x={x} y={y} width={width} height={height} fill={fill} stroke="white" strokeWidth={2} />;
+    }
+    return (
+      <g>
+        <rect x={x} y={y} width={width} height={height} fill={fill} stroke="white" strokeWidth={2} rx={4} />
+        {width > 50 && height > 30 && (
+          <text
+            x={x + width / 2}
+            y={y + height / 2 - (height > 50 ? 8 : 0)}
+            textAnchor="middle"
+            fill="white"
+            fontSize={fontSize}
+            fontWeight="600"
+            dominantBaseline="middle"
+          >
+            {String(name).slice(0, Math.floor(width / (fontSize * 0.62)))}
+          </text>
+        )}
+        {height > 50 && width > 50 && (
+          <text x={x + width / 2} y={y + height / 2 + 10} textAnchor="middle" fill="rgba(255,255,255,0.85)" fontSize={fontSize - 1} dominantBaseline="middle">
+            {pct}%
+          </text>
+        )}
+      </g>
+    );
+  };
+
+  const chartConfig: ChartConfig = {
+    size: { label: formatLabel(valueKey), color: CHART_COLORS[0] },
+  };
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <ChartContainer config={chartConfig} className="h-[420px] w-full">
+          <Treemap data={parsedData} dataKey="size" aspectRatio={4 / 3} content={<CustomContent />}>
+            <ChartTooltip
+              content={({ active, payload }) => {
+                if (!active || !payload?.length) return null;
+                const d = payload[0]?.payload;
+                const pct = total > 0 ? ((d.size / total) * 100).toFixed(1) : '0';
+                return (
+                  <div className="rounded-lg border bg-background p-2 shadow-sm text-xs space-y-1">
+                    <p className="font-semibold">{d.name}</p>
+                    <p>{formatLabel(valueKey)}: <span className="font-mono">{Number(d.size).toLocaleString()}</span></p>
+                    <p>Share: <span className="font-mono">{pct}%</span></p>
+                  </div>
+                );
+              }}
+            />
+          </Treemap>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * Combo Chart Renderer — Bar (left axis) + Line (right axis)
+ */
+interface ComboProps {
+  data: any[];
+  categoryKey: string;
+  barKey: string;
+  lineKey: string;
+  barLabel?: string;
+  lineLabel?: string;
+}
+
+export function RenderComboChart({ data, categoryKey, barKey, lineKey, barLabel, lineLabel }: ComboProps) {
+  if (!data || data.length === 0) {
+    return <Card><CardContent className="pt-6"><p className="text-muted-foreground">No data to display</p></CardContent></Card>;
+  }
+
+  const pre = preprocessTimeSeries(data, categoryKey);
+  const usedCategoryKey = pre.categoryKey;
+  const parsedData = parseNumericColumns(pre.data, [barKey, lineKey]);
+
+  const chartConfig: ChartConfig = {
+    [barKey]: { label: barLabel || formatLabel(barKey), color: CHART_COLORS[0] },
+    [lineKey]: { label: lineLabel || formatLabel(lineKey), color: CHART_COLORS[2] },
+  };
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <ChartContainer config={chartConfig} className="h-[380px] w-full">
+          <ComposedChart data={parsedData} accessibilityLayer>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis
+              dataKey={usedCategoryKey}
+              tickLine={false}
+              axisLine={false}
+              tickMargin={10}
+              tickFormatter={(v) => String(v).slice(0, 12)}
+            />
+            <YAxis
+              yAxisId="left"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={10}
+              tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={10}
+            />
+            <Tooltip
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null;
+                return (
+                  <div className="rounded-lg border bg-background p-2 shadow-sm text-xs space-y-1">
+                    <p className="font-semibold">{label}</p>
+                    {payload.map((p: any, i: number) => (
+                      <p key={i} style={{ color: p.color }}>
+                        {p.name}: <span className="font-mono">{Number(p.value).toLocaleString()}</span>
+                      </p>
+                    ))}
+                  </div>
+                );
+              }}
+            />
+            <Legend
+              content={({ payload }) => (
+                <div className="flex items-center justify-center gap-4 mt-2 text-xs text-muted-foreground">
+                  {payload?.map((p: any, i: number) => (
+                    <span key={i} className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-sm inline-block" style={{ background: p.color }} />
+                      {p.value}
+                    </span>
+                  ))}
+                </div>
+              )}
+            />
+            <Bar
+              yAxisId="left"
+              dataKey={barKey}
+              name={barLabel || formatLabel(barKey)}
+              fill={CHART_COLORS[0]}
+              radius={[4, 4, 0, 0]}
+              fillOpacity={0.85}
+            />
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey={lineKey}
+              name={lineLabel || formatLabel(lineKey)}
+              stroke={CHART_COLORS[2]}
+              strokeWidth={2.5}
+              dot={{ fill: CHART_COLORS[2], strokeWidth: 0, r: 4 }}
+              activeDot={{ r: 6, strokeWidth: 0 }}
+              connectNulls
+            />
+          </ComposedChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}

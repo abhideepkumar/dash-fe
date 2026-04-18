@@ -38,15 +38,11 @@ export function LoginPage() {
 
     try {
       if (isNewUser) {
-        // In the new flow, DB connection is a separate route, so we just log them in
-        // or navigate to /connect after registering. For now, mock registration:
+        // Register without DB config - it will be asked in the next step
         const result = await api.auth.register({
           email,
           password,
-          dbConfig: { host: '', port: 5432, database: '', user: '', password: '' }
-        }).catch(() => {
-            // Mock fallback if validation fails without real dbConfig
-            return api.auth.login(email, password); 
+          dbConfig: null as any
         });
         
         login(result.token, result.user);
@@ -54,7 +50,13 @@ export function LoginPage() {
       } else {
         const result = await api.auth.login(email, password);
         login(result.token, result.user);
-        navigate('/');
+        
+        // If they have no DB config, take them to connect page
+        if (!result.hasDbConfig) {
+          navigate('/connect');
+        } else {
+          navigate('/');
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Authentication failed');

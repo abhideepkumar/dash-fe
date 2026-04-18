@@ -61,7 +61,8 @@ export function DashboardPage() {
         setSyncStatus('syncing');
         setSyncProgress({ stage: 'enriching', current: 1, total: 10 });
       } else {
-        onError(err.message);
+        console.error("Technical Error during Dashboard Query Operation:", err);
+        onError("We encountered an issue processing your request. Please try rephrasing or ask another question.");
       }
     } finally {
       onFinally?.();
