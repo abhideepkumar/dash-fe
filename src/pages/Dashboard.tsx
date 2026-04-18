@@ -40,6 +40,17 @@ export function DashboardPage() {
 
       const genData = await api.query.generate(sessionId, query, history);
       if (!genData.success) throw new Error(genData.message);
+      
+      // Handle the "cannot answer" case (short-circuit)
+      if (genData.cannotAnswer) {
+        onSuccess({ 
+          cannotAnswer: true, 
+          reason: genData.reason, 
+          suggestions: genData.suggestions 
+        }, "");
+        return;
+      }
+
       const { requestId, sql } = genData;
 
       const execData = await api.query.execute(sessionId, sql, requestId);
@@ -113,16 +124,32 @@ export function DashboardPage() {
       [], // No history for new panels
       (uiSpec, sql) => {
         // Update the panel with the result
-        setPanels(prev => prev.map(p =>
-          p.id === panelId
-            ? { ...p, uiSpec, sql, isProcessing: false, error: null }
-            : p
-        ));
+        setPanels(prev => prev.map(p => {
+          if (p.id !== panelId) return p;
+          
+          if (uiSpec.cannotAnswer) {
+            return { 
+              ...p, 
+              cannotAnswer: true, 
+              fallbackReason: uiSpec.reason, 
+              suggestions: uiSpec.suggestions,
+              isProcessing: false, 
+              error: null 
+            };
+          }
+          
+          return { ...p, uiSpec, sql, isProcessing: false, error: null };
+        }));
+
         setChatHistory(prev => {
           const updated = [...prev];
+          const content = uiSpec.cannotAnswer 
+            ? `I couldn't generate a chart for that, but I've provided some suggestions to help you explore the data.`
+            : `Chart added to your dashboard. I've visualized the data below. Ask a follow-up directly on the chart!`;
+          
           updated[updated.length - 1] = {
             role: 'ai',
-            content: `Chart added to your dashboard. I've visualized the data below. Ask a follow-up directly on the chart!`,
+            content,
           };
           return updated;
         });
@@ -171,10 +198,24 @@ export function DashboardPage() {
       (uiSpec, sql) => {
         setPanels(prev => prev.map(p => {
           if (p.id !== panelId) return p;
+
+          if (uiSpec.cannotAnswer) {
+            return {
+              ...p,
+              cannotAnswer: true,
+              fallbackReason: uiSpec.reason,
+              suggestions: uiSpec.suggestions,
+              isProcessing: false,
+              error: null,
+              // We don't necessarily update history for a failed follow-up
+            };
+          }
+
           return {
             ...p,
             uiSpec,
             sql,
+            cannotAnswer: false, // Reset fallback state if it was there
             isProcessing: false,
             error: null,
             // Append this turn to the panel's history for future follow-ups

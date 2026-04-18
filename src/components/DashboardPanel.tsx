@@ -16,6 +16,10 @@ export interface Panel {
   isProcessing: boolean;
   error: string | null;
   createdAt: Date;
+  // NEW fields for graceful fallbacks
+  cannotAnswer?: boolean;
+  fallbackReason?: string;
+  suggestions?: string[];
 }
 
 interface DashboardPanelProps {
@@ -38,7 +42,7 @@ export function DashboardPanel({ panel, index, onFollowUp, onRemove }: Dashboard
 
   // Focus the follow-up input when processing completes and there's history
   useEffect(() => {
-    if (!panel.isProcessing && panel.history.length > 0) {
+    if (!panel.isProcessing && (panel.history.length > 0 || panel.cannotAnswer)) {
       inputRef.current?.focus();
     }
   }, [panel.isProcessing]);
@@ -60,7 +64,7 @@ export function DashboardPanel({ panel, index, onFollowUp, onRemove }: Dashboard
           </div>
           <div className="min-w-0">
             <h3 className="text-base font-bold font-headline text-on-surface truncate">
-              {panel.uiSpec?.title || panel.originalQuery}
+              {panel.cannotAnswer ? 'Clarification Needed' : (panel.uiSpec?.title || panel.originalQuery)}
             </h3>
             <p className="text-[10px] font-label uppercase tracking-widest text-outline font-bold truncate">
               {panel.originalQuery}
@@ -137,11 +141,45 @@ export function DashboardPanel({ panel, index, onFollowUp, onRemove }: Dashboard
 
       {/* Chart Body & Insights */}
       <div className="p-6">
-        <DynamicRenderer
-          uiSpec={panel.isProcessing ? null : panel.uiSpec}
-          isLoading={panel.isProcessing}
-          error={panel.error}
-        />
+        {panel.cannotAnswer ? (
+          <div className="space-y-6 py-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="flex gap-4 p-5 rounded-2xl bg-amber-50 border border-amber-100/50 text-amber-900">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-amber-600">lightbulb</span>
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-headline font-bold text-sm">Actionable Insight</h4>
+                <p className="text-sm leading-relaxed opacity-90">{panel.fallbackReason}</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-[10px] font-label font-bold uppercase tracking-widest text-outline px-1">Suggested Queries</p>
+              <div className="flex flex-col gap-2">
+                {panel.suggestions?.map((suggestion, i) => (
+                  <button
+                    key={i}
+                    onClick={() => onFollowUp(suggestion)}
+                    className="group flex items-center justify-between text-left p-4 rounded-xl border border-outline-variant/20 hover:border-primary/40 hover:bg-primary/5 transition-all"
+                  >
+                    <span className="text-sm font-medium text-on-surface group-hover:text-primary transition-colors">
+                      {suggestion}
+                    </span>
+                    <span className="material-symbols-outlined text-primary/0 group-hover:text-primary/100 transition-all -translate-x-2 group-hover:translate-x-0">
+                      chevron_right
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <DynamicRenderer
+            uiSpec={panel.isProcessing ? null : panel.uiSpec}
+            isLoading={panel.isProcessing}
+            error={panel.error}
+          />
+        )}
       </div>
     </motion.div>
   );
