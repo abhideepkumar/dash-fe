@@ -162,6 +162,27 @@ function renderComponent(component: ComponentSpec) {
 
   const { type, props } = component;
 
+  // Generic Bidirectional Prop Normalization
+  // LLMs often hallucinate xKey/yKey instead of categoryKey/dataKey, or vice-versa.
+  // We resolve the most likely intended keys and inject them universally so the 
+  // underlying components receive whatever alias they were hardcoded to expect.
+  const normalizedProps = { ...props };
+  
+  const resolvedCategory = normalizedProps.categoryKey || normalizedProps.xKey || normalizedProps.nameKey;
+  const resolvedData = normalizedProps.dataKey || normalizedProps.yKey || normalizedProps.valueKey;
+
+  if (resolvedCategory) {
+    normalizedProps.categoryKey = resolvedCategory;
+    normalizedProps.xKey = resolvedCategory;
+    normalizedProps.nameKey = resolvedCategory;
+  }
+
+  if (resolvedData) {
+    normalizedProps.dataKey = resolvedData;
+    normalizedProps.yKey = resolvedData;
+    normalizedProps.valueKey = resolvedData;
+  }
+
   // Look up renderer in registry
   const Renderer = COMPONENT_REGISTRY[type];
   
@@ -178,8 +199,8 @@ function renderComponent(component: ComponentSpec) {
     );
   }
 
-  // Spread ALL props through — this fixes seriesKey, nameKey, maxValue, etc.
-  return <Renderer {...props} />;
+  // Spread ALL normalized props through
+  return <Renderer {...normalizedProps} />;
 }
 
 function InsightsSection({ insights }: { insights: Insight[] }) {

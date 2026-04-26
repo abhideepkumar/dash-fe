@@ -68,7 +68,8 @@ function buildChartConfig(keys: string[]): ChartConfig {
 
 // Format column names to human-readable labels
 function formatLabel(str: string): string {
-  return str
+  if (!str) return 'Value';
+  return String(str)
     .replace(/_/g, ' ')
     .replace(/([A-Z])/g, ' $1')
     .split(' ')
