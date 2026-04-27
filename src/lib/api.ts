@@ -103,17 +103,32 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ sessionId, query, history }),
       }),
-    
+
     execute: (sessionId: string, sql: string, requestId?: string) =>
       apiRequest<any>('/query/execute', {
         method: 'POST',
         body: JSON.stringify({ sessionId, sql, requestId }),
       }),
-    
+
     visualize: (data: any) =>
       apiRequest<any>('/query/visualize', {
         method: 'POST',
         body: JSON.stringify(data),
+      }),
+  },
+
+  // Dashboard endpoints (new)
+  dashboard: {
+    plan: (sessionId: string, query: string) =>
+      apiRequest<any>('/dashboard/plan', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId, query }),
+      }),
+
+    execute: (sessionId: string, blueprintId: string, answers: Record<string, string> = {}) =>
+      apiRequest<any>('/dashboard/execute', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId, blueprintId, answers }),
       }),
   },
 

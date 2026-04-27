@@ -120,13 +120,25 @@ export function DynamicRenderer({ uiSpec, isLoading, error }: DynamicRendererPro
 
   const { title, description, component, insights } = uiSpec;
 
+  // Dashboard panel mode: title is deliberately set to '' by ChartOnlyRenderer.
+  // In this mode, skip all chrome (title, description, insights) and fill height.
+  const isPanelMode = title === '';
+
+  if (isPanelMode) {
+    return (
+      <div className="h-full w-full flex flex-col">
+        {renderComponent(component)}
+      </div>
+    );
+  }
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ 
         duration: 0.6, 
-        ease: [0.16, 1, 0.3, 1] // Custom easeOutExponential
+        ease: [0.16, 1, 0.3, 1]
       }}
       className="space-y-6"
     >
