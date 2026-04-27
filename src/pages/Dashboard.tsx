@@ -331,7 +331,7 @@ export function DashboardPage() {
       <Toaster position="top-center" />
 
       {/* ── Mode Toggle Bar — sticky below the fixed top nav ───────────── */}
-      <div className="shrink-0 flex items-center justify-between px-6 lg:px-8 py-2.5 border-b border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm">
+      <div className="shrink-0 flex items-center justify-between px-6 lg:px-8 py-2.5  pt-[65px] border-b border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm">
         <ModeToggle mode={mode} onChange={(m) => {
           setMode(m);
           if (m === 'chat') setDashboard(INITIAL_DASHBOARD);
