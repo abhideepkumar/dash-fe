@@ -108,10 +108,17 @@ export function DashboardPage() {
       const execData = await api.query.execute(sessionId, sql, requestId);
       if (!execData.success) throw new Error(execData.message);
 
+      // Send a representative sample to /visualize to limit payload size (max 500 rows).
+      // This sampled set is rendered and also used by uiGenerator (which sends first 5 rows to the LLM prompt).
+      const MAX_VISUALIZE_ROWS = 500;
+      const sampledRows = execData.rows.length > MAX_VISUALIZE_ROWS
+        ? execData.rows.slice(0, MAX_VISUALIZE_ROWS)
+        : execData.rows;
+
       const visData = await api.query.visualize({
         originalQuery: query,
         sql,
-        rows: execData.rows,
+        rows: sampledRows,
         fields: execData.fields,
         requestId,
         sessionId,
@@ -197,8 +204,7 @@ export function DashboardPage() {
           status: 'error',
           error: planData.reason || 'This query cannot be answered with the available data.',
         }));
-        setIsProcessing(false);
-        return;
+        return; // finally will run setIsProcessing(false)
       }
 
       // Clarification needed — show dialog, wait for user
@@ -211,8 +217,7 @@ export function DashboardPage() {
           sharedContext: planData.sharedContext,
           clarifyingQuestions: planData.clarifyingQuestions,
         }));
-        setIsProcessing(false);
-        return;
+        return; // finally will run setIsProcessing(false)
       }
 
       // No clarification needed — go straight to execute
@@ -221,6 +226,8 @@ export function DashboardPage() {
     } catch (err: any) {
       toast.error(err.message || 'Dashboard generation failed.');
       setDashboard(prev => ({ ...prev, status: 'error', error: err.message }));
+    } finally {
+      // Always unlock the command bar — no scattered setIsProcessing(false) calls needed
       setIsProcessing(false);
     }
   };
