@@ -51,7 +51,7 @@ export function ActivityStream({ stream, onReply, onCommand }: ActivityStreamPro
   return (
     <div className="flex flex-col gap-10 pb-32 pt-8">
       <AnimatePresence mode="popLayout">
-        {stream.map((turn, index) => (
+        {stream.map((turn) => (
           <motion.div
             key={turn.id}
             initial={{ opacity: 0, y: 20 }}

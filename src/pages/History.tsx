@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { api } from '@/lib/api';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, History, ChevronRight, Clock, Zap, CheckCircle2, AlertCircle, PlayCircle, Code2, MessageSquareReply, Calendar, X, Copy, Check } from 'lucide-react';
+import { Search, History, ChevronRight, Clock, Zap, CheckCircle2, AlertCircle, PlayCircle, Code2, MessageSquareReply, Calendar } from 'lucide-react';
 
 interface ActivityLog {
   requestId: string;
@@ -18,10 +18,16 @@ interface ActivityLog {
 }
 
 export function HistoryPage() {
+  const navigate = useNavigate();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [viewingLog, setViewingLog] = useState<ActivityLog | null>(null);
+
+  const handleReRun = (query: string) => {
+    navigate('/', { state: { prefillQuery: query } });
+  };
 
   useEffect(() => {
     const fetchLogs = async () => {
