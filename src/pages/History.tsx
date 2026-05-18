@@ -23,7 +23,7 @@ export function HistoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [viewingLog, setViewingLog] = useState<ActivityLog | null>(null);
+  const [_viewingLog, setViewingLog] = useState<ActivityLog | null>(null);
 
   const handleReRun = (query: string) => {
     navigate('/', { state: { prefillQuery: query } });
